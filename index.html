@@ -1,1077 +1,1013 @@
 <!DOCTYPE html>
-<html lang="ru" class="scroll-smooth">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>РЕПА — Автоответы на отзывы WB и Ozon</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
+    <title>ReviewBot Pro 4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: 5 5 5;
+            --surface: 10 10 10;
+            --card: 17 17 17;
+            --border: 26 26 26;
+            --border-light: 40 40 40;
+            --muted: 85 85 85;
+            --subtle: 136 136 136;
+            --fg: 224 224 224;
+            --white: 255 255 255;
+            --accent: 255 106 0;
+            --green: 34 197 94;
+            --red: 239 68 68;
+            --yellow: 234 179 8;
+            --blue: 59 130 246;
+            --purple: 168 85 247;
+            --xp: 251 191 36;
+            --sky: 14 165 233;
+            --silver: 192 192 192;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        body { font-family:'Inter',system-ui,sans-serif; background:#050505; color:#e0e0e0; -webkit-font-smoothing:antialiased; overflow-x:hidden; padding-bottom:env(safe-area-inset-bottom); }
+        ::-webkit-scrollbar { width:0; height:0; }
+
+        .page { display:none; flex-direction:column; min-height:100dvh; }
+        .page.active { display:flex; }
+
+        @keyframes slide-up { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+        @keyframes count-pop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+        .anim { animation:slide-up .35s ease-out both; }
+
+        .card { background:rgb(var(--card)); border:1px solid rgb(var(--border)); border-radius:14px; transition:border-color .15s; }
+        .card:active { border-color:rgb(var(--accent) / .5); }
+
+        .btn-accent { background:rgb(var(--accent)); color:#000; font-weight:700; border-radius:12px; transition:transform .1s,background .15s; }
+        .btn-accent:active { transform:scale(.97); background:rgb(var(--accent) / .85); }
+
+        .btn-ghost { background:transparent; border:1px solid rgb(var(--border-light)); color:#e0e0e0; font-weight:500; border-radius:12px; transition:border-color .15s,color .15s; }
+        .btn-ghost:active { border-color:rgb(var(--accent)); color:rgb(var(--accent)); }
+
+        .text-grad { background:linear-gradient(135deg,#ff6a00,#ff9955); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+        .pbar { height:5px; background:rgb(var(--border)); border-radius:5px; overflow:hidden; }
+        .pfill { height:100%; border-radius:5px; transition:width .5s ease; }
+
+        .badge { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:700; letter-spacing:.02em; white-space:nowrap; }
+
+        .chip { padding:8px 14px; border-radius:10px; border:1px solid rgb(var(--border)); font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
+        .chip.on { border-color:rgb(var(--accent)); background:rgb(var(--accent) / .1); color:rgb(var(--accent)); }
+        .chip:not(.on):active { background:rgb(var(--card)); }
+
+        .tog { width:46px; height:26px; background:rgb(var(--border-light)); border-radius:13px; position:relative; cursor:pointer; transition:background .2s; flex-shrink:0; }
+        .tog.on { background:rgb(var(--accent)); }
+        .tog::after { content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; background:#fff; border-radius:50%; transition:transform .2s; }
+        .tog.on::after { transform:translateX(20px); }
+
+        .sub-page { display:none; flex-direction:column; min-height:100dvh; position:fixed; inset:0; background:#050505; z-index:60; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+        .sub-page.open { display:flex; animation:slide-up .25s ease-out; }
+
+        .bnav { position:fixed; bottom:0; left:0; right:0; z-index:50; background:rgba(5,5,5,.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid rgb(var(--border)); padding-bottom:env(safe-area-inset-bottom,6px); }
+        .bnav-item { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 6px; cursor:pointer; -webkit-user-select:none; user-select:none; }
+        .bnav-item.on .bnav-ico { color:rgb(var(--accent)); }
+        .bnav-item.on .bnav-lbl { color:rgb(var(--accent)); }
+        .bnav-item.on::before { content:''; position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:24px; height:2px; background:rgb(var(--accent)); border-radius:2px; }
+        .bnav-ico { color:rgb(var(--muted)); transition:color .15s; }
+        .bnav-lbl { font-size:10px; font-weight:600; color:rgb(var(--muted)); transition:color .15s; }
+        .bnav-item { position:relative; }
+
+        .rcard { border-left:3px solid transparent; }
+        .rcard.pos { border-left-color:rgb(var(--green)); }
+        .rcard.neg { border-left-color:rgb(var(--red)); }
+        .rcard.neu { border-left-color:rgb(var(--yellow)); }
+        .rcard.ques { border-left-color:rgb(var(--blue)); }
+
+        .lb-row { display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; }
+        .lb-row.gold { background:rgb(var(--yellow) / .06); border:1px solid rgb(var(--yellow) / .15); }
+        .lb-row.silver { background:rgb(var(--silver) / .04); border:1px solid rgb(var(--silver) / .1); }
+        .lb-row.bronze { background:rgb(180 120 60 / .04); border:1px solid rgb(180 120 60 / .1); }
+
+        input,textarea,select { font-family:inherit; font-size:14px; }
+        input:focus,textarea:focus,select:focus { outline:none; border-color:rgb(var(--accent)) !important; }
+    </style>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bg: '#050505',
-                        surface: '#0A0A0A',
-                        card: '#111111',
-                        border: '#1E1E1E',
-                        muted: '#666666',
-                        subtle: '#999999',
-                        fg: '#E8E8E8',
-                        white: '#FFFFFF',
-                        accent: '#FF6A00',
-                        'accent-dim': '#CC5500',
-                        silver: '#C0C0C0',
-                        'silver-dark': '#8A8A8A',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    bg:'rgb(var(--bg))', surface:'rgb(var(--surface))', card:'rgb(var(--card))',
+                    border:'rgb(var(--border))', 'border-lt':'rgb(var(--border-light))',
+                    muted:'rgb(var(--muted))', subtle:'rgb(var(--subtle))',
+                    fg:'rgb(var(--fg))', white:'rgb(var(--white))',
+                    accent:'rgb(var(--accent))', green:'rgb(var(--green))',
+                    red:'rgb(var(--red))', yellow:'rgb(var(--yellow))',
+                    blue:'rgb(var(--blue))', purple:'rgb(var(--purple))',
+                    xp:'rgb(var(--xp))', sky:'rgb(var(--sky))', silver:'rgb(var(--silver))',
                 }
             }
         }
+    }
     </script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #050505; color: #E8E8E8; -webkit-font-smoothing: antialiased; }
-
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 0.15; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(1.05); }
-        }
-        @keyframes slide-up {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slide-in-left {
-            from { opacity: 0; transform: translateX(-40px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes count-up {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes ticker {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-        @keyframes typing {
-            from { width: 0; }
-            to { width: 100%; }
-        }
-        @keyframes fade-in {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .animate-slide-up { animation: slide-up 0.7s ease-out forwards; }
-        .animate-slide-up-delay { animation: slide-up 0.7s ease-out 0.15s forwards; opacity: 0; }
-        .animate-slide-up-delay-2 { animation: slide-up 0.7s ease-out 0.3s forwards; opacity: 0; }
-        .animate-slide-in-left { animation: slide-in-left 0.6s ease-out forwards; }
-        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
-        .animate-float { animation: float 4s ease-in-out infinite; }
-
-        .glow-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(120px);
-            animation: pulse-glow 6s ease-in-out infinite;
-            pointer-events: none;
-        }
-
-        .ticker-track {
-            display: flex;
-            animation: ticker 30s linear infinite;
-            width: max-content;
-        }
-
-        .card-hover {
-            transition: all 0.3s ease;
-            border: 1px solid #1E1E1E;
-        }
-        .card-hover:hover {
-            border-color: #FF6A00;
-            background: #151515 !important;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(255, 106, 0, 0.08);
-        }
-
-        .btn-primary {
-            background: #FF6A00;
-            color: #000;
-            font-weight: 700;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-primary:hover {
-            background: #FF8533;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 24px rgba(255, 106, 0, 0.3);
-        }
-        .btn-primary:active { transform: scale(0.97); }
-
-        .btn-outline {
-            border: 1px solid #333;
-            color: #E8E8E8;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-        .btn-outline:hover {
-            border-color: #FF6A00;
-            color: #FF6A00;
-            background: rgba(255, 106, 0, 0.05);
-        }
-
-        .text-gradient {
-            background: linear-gradient(135deg, #FF6A00, #FF9955);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease-out; }
-        .section-reveal.visible { opacity: 1; transform: translateY(0); }
-
-        .noise-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0.03;
-            pointer-events: none;
-            z-index: 9999;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        }
-
-        .typing-cursor::after {
-            content: '|';
-            animation: blink 0.8s infinite;
-            color: #FF6A00;
-        }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #050505; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #FF6A00; }
-
-        .stat-number { font-variant-numeric: tabular-nums; }
-
-        .grid-pattern {
-            background-image:
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-            background-size: 60px 60px;
-        }
-
-        .review-bubble {
-            position: relative;
-            padding: 16px 20px;
-            background: #151515;
-            border: 1px solid #1E1E1E;
-            border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-        .review-bubble::before {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: 20px;
-            width: 12px;
-            height: 12px;
-            background: #151515;
-            border-left: 1px solid #1E1E1E;
-            border-top: 1px solid #1E1E1E;
-            transform: rotate(45deg);
-        }
-        .review-bubble.reply {
-            border-color: rgba(255,106,0,0.2);
-            background: rgba(255,106,0,0.04);
-        }
-        .review-bubble.reply::before {
-            background: rgba(255,106,0,0.04);
-            border-color: rgba(255,106,0,0.2);
-        }
-
-        .tab-btn {
-            transition: all 0.2s ease;
-            cursor: pointer;
-            border: 1px solid transparent;
-        }
-        .tab-btn.active {
-            background: #FF6A00;
-            color: #000;
-            font-weight: 700;
-            border-color: #FF6A00;
-        }
-        .tab-btn:not(.active):hover {
-            border-color: #333;
-            background: #111;
-        }
-
-        .faq-item { border: 1px solid #1E1E1E; transition: all 0.2s ease; }
-        .faq-item:hover { border-color: #333; }
-        .faq-item.open { border-color: rgba(255,106,0,0.3); }
-        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; }
-        .faq-item.open .faq-answer { max-height: 300px; }
-        .faq-chevron { transition: transform 0.3s ease; }
-        .faq-item.open .faq-chevron { transform: rotate(180deg); }
-
-        .marquee-mask {
-            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-        }
-    </style>
 </head>
-<body class="overflow-x-hidden">
-    <div class="noise-overlay"></div>
+<body>
 
-    <!-- NAVIGATION -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-bg/90 backdrop-blur-xl border-b border-border">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="#" class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center">
-                    <span class="text-black font-black text-sm">Р</span>
-                </div>
-                <span class="text-white font-bold text-lg tracking-tight">РЕПА</span>
-            </a>
-            <div class="hidden md:flex items-center gap-8">
-                <a href="#features" class="text-subtle text-sm hover:text-white transition-colors">Функции</a>
-                <a href="#how" class="text-subtle text-sm hover:text-white transition-colors">Как работает</a>
-                <a href="#cases" class="text-subtle text-sm hover:text-white transition-colors">Кейсы</a>
-                <a href="#pricing" class="text-subtle text-sm hover:text-white transition-colors">Тарифы</a>
-                <a href="#faq" class="text-subtle text-sm hover:text-white transition-colors">FAQ</a>
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<div id="pg-dash" class="page active">
+    <div class="px-5 pt-14 pb-6">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6 anim">
+            <div>
+                <p class="text-subtle text-xs mb-0.5">Добро пожаловать,</p>
+                <h2 class="text-white text-xl font-bold">Алексей 👋</h2>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="https://t.me/repa_bot" target="_blank" class="btn-primary px-5 py-2.5 rounded-lg text-sm inline-flex items-center gap-2">
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                    Запустить бот
-                </a>
-                <button id="mobile-menu-btn" class="md:hidden text-white p-2">
-                    <i data-lucide="menu" class="w-5 h-5"></i>
+            <div class="flex items-center gap-2.5">
+                <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center relative" onclick="openSub('notif')">
+                    <i data-lucide="bell" class="w-[18px] h-[18px] text-subtle"></i>
+                    <span class="absolute -top-1 -right-1 w-[18px] h-[18px] bg-red rounded-full flex items-center justify-center text-[9px] text-white font-bold">3</span>
+                </button>
+                <button class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center" onclick="switchTo('prof')">
+                    <span class="text-accent font-black text-sm">12</span>
                 </button>
             </div>
         </div>
-        <!-- Mobile menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-surface border-t border-border px-6 py-4 space-y-3">
-            <a href="#features" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Функции</a>
-            <a href="#how" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Как работает</a>
-            <a href="#cases" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Кейсы</a>
-            <a href="#pricing" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Тарифы</a>
-            <a href="#faq" class="block text-subtle text-sm py-2 hover:text-white transition-colors">FAQ</a>
-        </div>
-    </nav>
 
-    <!-- HERO SECTION -->
-    <section class="relative min-h-screen flex items-center pt-16 grid-pattern overflow-hidden">
-        <div class="glow-orb w-[600px] h-[600px] bg-accent top-[-200px] right-[-200px]"></div>
-        <div class="glow-orb w-[400px] h-[400px] bg-accent bottom-[-100px] left-[-150px]" style="animation-delay: -3s;"></div>
-
-        <div class="max-w-7xl mx-auto px-6 py-20 w-full relative z-10">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                <!-- Left: Text -->
-                <div class="space-y-7">
-                    <div class="animate-slide-up flex items-center gap-2 bg-card border border-border rounded-full px-4 py-1.5 w-fit">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span class="text-xs text-subtle font-medium">2,847 селлеров онлайн</span>
+        <!-- Trial Banner -->
+        <div class="rounded-2xl p-4 mb-5 border border-accent/20 anim" style="background:linear-gradient(135deg,rgb(var(--accent)/.12),transparent)">
+            <div class="flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <i data-lucide="crown" class="w-4 h-4 text-accent flex-shrink-0"></i>
+                        <span class="text-accent text-[10px] font-bold uppercase tracking-widest">Пробный PRO</span>
                     </div>
-
-                    <h1 class="animate-slide-up-delay text-4xl sm:text-5xl lg:text-6xl font-black leading-[0.95] tracking-tight text-white">
-                        ОТВЕЧАЙ НА<br>
-                        <span class="text-gradient">ОТЗЫВЫ</span><br>
-                        ЗА 3 СЕКУНДЫ
-                    </h1>
-
-                    <p class="animate-slide-up-delay-2 text-subtle text-base lg:text-lg leading-relaxed max-w-md">
-                        ИИ-бот для автоматических ответов на отзывы Wildberries и Ozon. Увеличь рейтинг на 15% за первый месяц.
-                    </p>
-
-                    <div class="animate-slide-up-delay-2 flex flex-col sm:flex-row gap-3 pt-2">
-                        <a href="https://t.me/repa_bot" target="_blank" class="btn-primary px-7 py-3.5 rounded-xl text-sm inline-flex items-center justify-center gap-2.5">
-                            <i data-lucide="zap" class="w-4 h-4"></i>
-                            Подключить бесплатно
-                        </a>
-                        <a href="#how" class="btn-outline px-7 py-3.5 rounded-xl text-sm inline-flex items-center justify-center gap-2.5">
-                            Как это работает
-                            <i data-lucide="arrow-down" class="w-4 h-4"></i>
-                        </a>
-                    </div>
-
-                    <div class="animate-slide-up-delay-2 flex items-center gap-6 pt-4">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-600 border-2 border-bg flex items-center justify-center text-[10px] text-white font-bold">АК</div>
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-bg flex items-center justify-center text-[10px] text-white font-bold">МВ</div>
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-teal-600 border-2 border-bg flex items-center justify-center text-[10px] text-white font-bold">ОС</div>
-                            <div class="w-8 h-8 rounded-full bg-card border-2 border-bg flex items-center justify-center text-[10px] text-subtle font-medium">+2K</div>
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-1">
-                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
-                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
-                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
-                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
-                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
-                            </div>
-                            <span class="text-xs text-muted mt-0.5 block">4.9/5 на 320+ отзывах</span>
-                        </div>
-                    </div>
+                    <p class="text-white text-sm font-semibold">Осталось 5 дней</p>
+                    <div class="pbar mt-2.5 w-32"><div class="pfill bg-accent" style="width:29%"></div></div>
                 </div>
+                <button class="btn-accent px-5 py-2.5 text-xs flex-shrink-0" onclick="openSub('sub')">Улучшить</button>
+            </div>
+        </div>
 
-                <!-- Right: Live Demo -->
-                <div class="relative animate-slide-up-delay">
-                    <div class="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-2xl shadow-black/50">
-                        <!-- Header -->
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
-                                    <i data-lucide="message-square-text" class="w-5 h-5 text-accent"></i>
-                                </div>
-                                <div>
-                                    <div class="text-white text-sm font-semibold">Новый отзыв</div>
-                                    <div class="text-muted text-xs">Wildberries · 2 сек назад</div>
-                                </div>
-                            </div>
-                            <span class="text-[10px] uppercase tracking-widest text-accent font-bold bg-accent/10 px-2 py-1 rounded">Авто</span>
-                        </div>
+        <!-- XP -->
+        <div class="card p-4 mb-5 anim" style="animation-delay:.04s">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-xp/10 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-xp"></i></div>
+                    <span class="text-white text-sm font-semibold">Уровень 12</span>
+                </div>
+                <span class="text-xp text-xs font-bold">2 340 / 3 000</span>
+            </div>
+            <div class="pbar"><div class="pfill bg-gradient-to-r from-xp to-yellow-400" style="width:78%"></div></div>
+            <p class="text-muted text-[11px] mt-2">До уровня 13: 660 XP · Серия: 7 дней 🔥</p>
+        </div>
 
-                        <!-- Review -->
-                        <div class="space-y-3">
-                            <div class="review-bubble">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <div class="flex gap-0.5">
-                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 fill-yellow-500"></i>
-                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 fill-yellow-500"></i>
-                                        <i data-lucide="star" class="w-3 h-3 text-muted"></i>
-                                        <i data-lucide="star" class="w-3 h-3 text-muted"></i>
-                                        <i data-lucide="star" class="w-3 h-3 text-muted"></i>
-                                    </div>
-                                    <span class="text-muted text-xs">Анна К.</span>
-                                </div>
-                                <p class="text-fg">Качество ткани хорошее, но размер не совпал. Заказывала M, пришёл как S. Буду возвращать.</p>
-                            </div>
+        <!-- Stats -->
+        <div class="grid grid-cols-2 gap-3 mb-6 anim" style="animation-delay:.08s">
+            <div class="card p-4">
+                <p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Ответов сегодня</p>
+                <p class="text-white text-2xl font-black">47</p>
+                <div class="flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3 text-green"></i><span class="text-green text-[11px] font-bold">+23%</span></div>
+            </div>
+            <div class="card p-4">
+                <p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Авто-ответы</p>
+                <p class="text-white text-2xl font-black">34</p>
+                <p class="text-muted text-[11px] mt-1">из 20 лимита/день</p>
+            </div>
+            <div class="card p-4">
+                <p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Рейтинг WB</p>
+                <p class="text-white text-2xl font-black">4.72</p>
+                <div class="flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3 text-green"></i><span class="text-green text-[11px] font-bold">+0.15</span></div>
+            </div>
+            <div class="card p-4">
+                <p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Рейтинг Ozon</p>
+                <p class="text-white text-2xl font-black">4.85</p>
+                <div class="flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3 text-green"></i><span class="text-green text-[11px] font-bold">+0.08</span></div>
+            </div>
+        </div>
 
-                            <!-- AI Reply -->
-                            <div class="review-bubble reply" id="ai-reply">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <div class="w-5 h-5 rounded bg-accent flex items-center justify-center">
-                                        <span class="text-black text-[9px] font-black">Р</span>
-                                    </div>
-                                    <span class="text-accent text-xs font-semibold">РЕПА · Ответ</span>
-                                </div>
-                                <p class="text-fg/90" id="reply-text">Анна, здравствуйте! Благодарим за обратную связь. Приносим извинения за несоответствие размера — мы уже передали информацию на производство. Оформите возврат через личный кабинет, деньги вернутся в течение 3 дней. В качестве компенсации предлагаем скидку 15% на следующий заказ (промокод: SORRY15). Будем рады видеть вас снова!</p>
-                            </div>
-                        </div>
-
-                        <!-- Footer -->
-                        <div class="flex items-center justify-between pt-2 border-t border-border">
-                            <div class="flex items-center gap-4">
-                                <button class="flex items-center gap-1.5 text-muted hover:text-green-400 transition-colors text-xs" onclick="showToast('Ответ опубликован ✓')">
-                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
-                                    Опубликовать
-                                </button>
-                                <button class="flex items-center gap-1.5 text-muted hover:text-white transition-colors text-xs">
-                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                    Редактировать
-                                </button>
-                            </div>
-                            <span class="text-muted text-xs flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3 h-3"></i>
-                                2.3 сек
-                            </span>
-                        </div>
+        <!-- Missions -->
+        <div class="mb-6 anim" style="animation-delay:.12s">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-white text-sm font-bold">Ежедневные миссии</h3>
+                <span class="text-accent text-xs font-semibold">2/4</span>
+            </div>
+            <div class="space-y-2.5">
+                <div class="card p-3.5 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4 text-green"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-fg text-[13px] font-medium">Ответь на 10 отзывов</p>
+                        <div class="pbar mt-2"><div class="pfill bg-green" style="width:100%"></div></div>
                     </div>
-
-                    <!-- Floating badge -->
-                    <div class="absolute -bottom-4 -left-4 bg-surface border border-border rounded-xl px-4 py-3 shadow-lg animate-float">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                <i data-lucide="trending-up" class="w-4 h-4 text-green-400"></i>
-                            </div>
-                            <div>
-                                <div class="text-white text-sm font-bold">+18%</div>
-                                <div class="text-muted text-[10px]">Рейтинг за 30 дней</div>
-                            </div>
-                        </div>
+                    <span class="text-green text-[11px] font-bold flex-shrink-0">+50 XP</span>
+                </div>
+                <div class="card p-3.5 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4 text-green"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-fg text-[13px] font-medium">Подключи магазин</p>
+                        <div class="pbar mt-2"><div class="pfill bg-green" style="width:100%"></div></div>
                     </div>
-
-                    <!-- Floating badge 2 -->
-                    <div class="absolute -top-3 -right-3 bg-surface border border-border rounded-xl px-4 py-3 shadow-lg animate-float" style="animation-delay: -2s;">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                                <i data-lucide="bot" class="w-4 h-4 text-accent"></i>
-                            </div>
-                            <div>
-                                <div class="text-white text-sm font-bold">14.2M</div>
-                                <div class="text-muted text-[10px]">Ответов отправлено</div>
-                            </div>
-                        </div>
+                    <span class="text-green text-[11px] font-bold flex-shrink-0">+100 XP</span>
+                </div>
+                <div class="card p-3.5 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0"><i data-lucide="message-square" class="w-4 h-4 text-accent"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-fg text-[13px] font-medium">Ответь на негатив</p>
+                        <div class="pbar mt-2"><div class="pfill bg-accent/30" style="width:0%"></div></div>
                     </div>
+                    <span class="text-muted text-[11px] font-bold flex-shrink-0">+75 XP</span>
+                </div>
+                <div class="card p-3.5 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-purple/10 flex items-center justify-center flex-shrink-0"><i data-lucide="share-2" class="w-4 h-4 text-purple"></i></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-fg text-[13px] font-medium">Пригласи друга</p>
+                        <div class="pbar mt-2"><div class="pfill bg-purple/30" style="width:0%"></div></div>
+                    </div>
+                    <span class="text-muted text-[11px] font-bold flex-shrink-0">+200 XP</span>
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- TICKER BAR -->
-    <div class="border-y border-border bg-surface py-4 marquee-mask overflow-hidden">
-        <div class="ticker-track">
-            <div class="flex items-center gap-12 px-6">
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Wildberries</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Ozon</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> GPT-4o</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Анализ тональности</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Шаблоны ответов</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Мультиаккаунт</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Аналитика</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> API</span>
+        <!-- Quick Actions -->
+        <div class="mb-6 anim" style="animation-delay:.16s">
+            <h3 class="text-white text-sm font-bold mb-3">Быстрые действия</h3>
+            <div class="grid grid-cols-4 gap-2.5">
+                <button class="card p-3 flex flex-col items-center gap-2" onclick="switchTo('revs')">
+                    <div class="w-11 h-11 rounded-xl bg-blue/10 flex items-center justify-center"><i data-lucide="message-square-text" class="w-5 h-5 text-blue"></i></div>
+                    <span class="text-[11px] text-subtle font-medium">Отзывы</span>
+                </button>
+                <button class="card p-3 flex flex-col items-center gap-2" onclick="switchTo('ai')">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center"><i data-lucide="brain" class="w-5 h-5 text-accent"></i></div>
+                    <span class="text-[11px] text-subtle font-medium">AI</span>
+                </button>
+                <button class="card p-3 flex flex-col items-center gap-2" onclick="openSub('anl')">
+                    <div class="w-11 h-11 rounded-xl bg-green/10 flex items-center justify-center"><i data-lucide="bar-chart-3" class="w-5 h-5 text-green"></i></div>
+                    <span class="text-[11px] text-subtle font-medium">Аналитика</span>
+                </button>
+                <button class="card p-3 flex flex-col items-center gap-2" onclick="openSub('batch')">
+                    <div class="w-11 h-11 rounded-xl bg-purple/10 flex items-center justify-center"><i data-lucide="layers" class="w-5 h-5 text-purple"></i></div>
+                    <span class="text-[11px] text-subtle font-medium">Пакет</span>
+                </button>
             </div>
-            <div class="flex items-center gap-12 px-6">
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Wildberries</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Ozon</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> GPT-4o</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Анализ тональности</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Шаблоны ответов</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Мультиаккаунт</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Аналитика</span>
-                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> API</span>
+        </div>
+
+        <!-- Activity -->
+        <div class="anim" style="animation-delay:.2s">
+            <h3 class="text-white text-sm font-bold mb-3">Последняя активность</h3>
+            <div class="space-y-2">
+                <div class="card p-3.5 flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green flex-shrink-0" style="animation:pulse-dot 2s infinite"></span>
+                    <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium truncate">Авто-ответ · WB · 5★ отзыв</p><p class="text-muted text-[11px]">2 мин назад</p></div>
+                    <span class="badge bg-green/10 text-green">OK</span>
+                </div>
+                <div class="card p-3.5 flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow flex-shrink-0"></span>
+                    <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium truncate">Модерация: Ozon · 2★ отзыв</p><p class="text-muted text-[11px]">8 мин назад</p></div>
+                    <span class="badge bg-yellow/10 text-yellow">Ждёт</span>
+                </div>
+                <div class="card p-3.5 flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-green flex-shrink-0"></span>
+                    <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium truncate">Ручной ответ · WB · 4★</p><p class="text-muted text-[11px]">23 мин назад</p></div>
+                    <span class="badge bg-green/10 text-green">OK</span>
+                </div>
+                <div class="card p-3.5 flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0"></span>
+                    <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium truncate">+25 XP · Миссия выполнена</p><p class="text-muted text-[11px]">1 ч назад</p></div>
+                    <span class="badge bg-accent/10 text-accent">XP</span>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- STATS SECTION -->
-    <section class="py-16 border-b border-border">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 section-reveal">
-                <div class="text-center lg:text-left">
-                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">14.2M</div>
-                    <div class="text-muted text-sm mt-1">Ответов отправлено</div>
-                </div>
-                <div class="text-center lg:text-left">
-                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">2.3<span class="text-accent">с</span></div>
-                    <div class="text-muted text-sm mt-1">Среднее время ответа</div>
-                </div>
-                <div class="text-center lg:text-left">
-                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">+18%</div>
-                    <div class="text-muted text-sm mt-1">Рост рейтинга</div>
-                </div>
-                <div class="text-center lg:text-left">
-                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">2,847</div>
-                    <div class="text-muted text-sm mt-1">Активных селлеров</div>
-                </div>
+<!-- ═══════════ REVIEWS ═══════════ -->
+<div id="pg-revs" class="page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center justify-between mb-5">
+            <h1 class="text-white text-xl font-bold">Отзывы</h1>
+            <div class="flex gap-2">
+                <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="openSub('batch')"><i data-lucide="upload" class="w-[18px] h-[18px] text-subtle"></i></button>
+                <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center"><i data-lucide="sliders-horizontal" class="w-[18px] h-[18px] text-subtle"></i></button>
             </div>
         </div>
-    </section>
 
-    <!-- FEATURES SECTION -->
-    <section id="features" class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="section-reveal mb-16">
-                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Функции</span>
-                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ВСЁ ДЛЯ УПРАВЛЕНИЯ<br>ОТЗЫВАМИ В ОДНОМ БОТЕ</h2>
-                <p class="text-subtle mt-4 max-w-lg text-sm leading-relaxed">Репа анализирует каждый отзыв, определяет тональность и генерирует персональный ответ за секунды.</p>
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-1" style="-webkit-overflow-scrolling:touch" id="rev-tabs">
+            <button class="chip on" onclick="chipSel(this)">Все <span class="text-muted ml-0.5">18</span></button>
+            <button class="chip" onclick="chipSel(this)">WB <span class="text-muted ml-0.5">11</span></button>
+            <button class="chip" onclick="chipSel(this)">Ozon <span class="text-muted ml-0.5">7</span></button>
+            <button class="chip" onclick="chipSel(this)">⏳ <span class="text-muted ml-0.5">3</span></button>
+        </div>
+
+        <!-- Monitor -->
+        <div class="card p-3.5 mb-5 flex items-center gap-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-green flex-shrink-0" style="animation:pulse-dot 2s infinite"></span>
+            <div class="flex-1 min-w-0">
+                <p class="text-fg text-[13px] font-semibold">Мониторинг активен</p>
+                <p class="text-muted text-[11px]">WB: 12 мин · Ozon: 8 мин назад</p>
+            </div>
+            <div class="tog on" onclick="this.classList.toggle('on')"></div>
+        </div>
+
+        <!-- Review Cards -->
+        <div class="space-y-3">
+            <!-- Pending negative -->
+            <div class="card rcard neg p-4">
+                <div class="flex items-center gap-2 flex-wrap mb-2.5">
+                    <span class="badge bg-red/10 text-red">2★</span>
+                    <span class="badge bg-purple/10 text-purple">Ozon</span>
+                    <span class="badge bg-yellow/10 text-yellow">⏳ Модерация</span>
+                    <span class="text-muted text-[11px] ml-auto">8 мин</span>
+                </div>
+                <p class="text-fg text-[13px] font-medium mb-1">Марина П.</p>
+                <p class="text-subtle text-[13px] leading-relaxed mb-4">Товар пришёл с браком — порван шов на кармане. Очень расстроена, ждала неделю.</p>
+                <div class="bg-surface rounded-xl p-3.5 mb-4 border border-border">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-5 h-5 rounded bg-accent flex items-center justify-center text-black text-[8px] font-black">AI</span>
+                        <span class="text-accent text-[11px] font-bold">Предложенный ответ</span>
+                    </div>
+                    <p class="text-fg text-[13px] leading-relaxed">Марина, приносим искренние извинения! Оформите возврат — вернём полную стоимость в течение 3 дней. В качестве компенсации промокод SORRY20 на скидку 20%. Будем рады всё исправить!</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn-accent flex-1 py-3 text-[13px] flex items-center justify-center gap-2" onclick="toast('Ответ опубликован ✓')"><i data-lucide="send" class="w-4 h-4"></i>Опубликовать</button>
+                    <button class="btn-ghost w-12 flex items-center justify-center"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                    <button class="btn-ghost w-12 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
             </div>
 
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 section-reveal">
-                <!-- Feature 1 -->
-                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
-                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <i data-lucide="brain" class="w-5 h-5 text-accent"></i>
-                    </div>
-                    <h3 class="text-white font-bold text-base">ИИ-анализ тональности</h3>
-                    <p class="text-subtle text-sm leading-relaxed">GPT-4o определяет позитив, негатив или нейтральность отзыва и подбирает стратегию ответа автоматически.</p>
-                    <div class="flex gap-2 pt-1">
-                        <span class="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded font-medium">Позитив</span>
-                        <span class="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded font-medium">Негатив</span>
-                        <span class="text-[10px] bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded font-medium">Нейтральный</span>
-                    </div>
+            <!-- Auto positive -->
+            <div class="card rcard pos p-4">
+                <div class="flex items-center gap-2 flex-wrap mb-2.5">
+                    <span class="badge bg-green/10 text-green">5★</span>
+                    <span class="badge bg-blue/10 text-blue">WB</span>
+                    <span class="badge bg-green/10 text-green">✓ Авто</span>
+                    <span class="text-muted text-[11px] ml-auto">2 мин</span>
                 </div>
+                <p class="text-fg text-[13px] font-medium mb-1">Дмитрий К.</p>
+                <p class="text-subtle text-[13px] leading-relaxed mb-3">Отличная куртка! Качество швов на высоте, ткань плотная. Размерная сетка совпала.</p>
+                <details class="group">
+                    <summary class="text-accent text-[12px] font-semibold cursor-pointer flex items-center gap-1">Показать ответ <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i></summary>
+                    <div class="text-subtle text-[13px] leading-relaxed mt-2.5 p-3 bg-surface rounded-lg border border-border">Дмитрий, спасибо за отличный отзыв! Рады, что куртка оправдала ожидания 🙌</div>
+                </details>
+                <div class="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+                    <button class="text-muted flex items-center gap-1.5 text-[12px]"><i data-lucide="thumbs-up" class="w-4 h-4"></i></button>
+                    <button class="text-muted flex items-center gap-1.5 text-[12px]"><i data-lucide="thumbs-down" class="w-4 h-4"></i></button>
+                    <button class="text-muted flex items-center gap-1.5 text-[12px]"><i data-lucide="bookmark" class="w-4 h-4"></i></button>
+                </div>
+            </div>
 
-                <!-- Feature 2 -->
-                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
-                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <i data-lucide="file-text" class="w-5 h-5 text-accent"></i>
-                    </div>
-                    <h3 class="text-white font-bold text-base">Умные шаблоны</h3>
-                    <p class="text-subtle text-sm leading-relaxed">Создай свои шаблоны с переменными: {имя}, {товар}, {проблема}. Бот подставит данные из отзыва.</p>
-                    <div class="bg-surface border border-border rounded-lg p-3 text-xs text-muted font-mono">
-                        Здравствуйте, {имя}! По поводу {проблема}...
-                    </div>
+            <!-- Question -->
+            <div class="card rcard ques p-4">
+                <div class="flex items-center gap-2 flex-wrap mb-2.5">
+                    <span class="badge bg-yellow/10 text-yellow">4★</span>
+                    <span class="badge bg-blue/10 text-blue">WB</span>
+                    <span class="badge bg-blue/10 text-blue">❓ Вопрос</span>
+                    <span class="text-muted text-[11px] ml-auto">25 мин</span>
                 </div>
+                <p class="text-fg text-[13px] font-medium mb-1">Елена С.</p>
+                <p class="text-subtle text-[13px] leading-relaxed mb-4">Подскажите, есть ли эта модель в цвете бежевый? И какой состав ткани?</p>
+                <div class="bg-surface rounded-xl p-3.5 mb-4 border border-border">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-5 h-5 rounded bg-accent flex items-center justify-center text-black text-[8px] font-black">AI</span>
+                        <span class="text-accent text-[11px] font-bold">Предложенный ответ</span>
+                    </div>
+                    <p class="text-fg text-[13px] leading-relaxed">Елена, добрый день! Бежевый цвет есть (артикул 123456). Состав: 80% хлопок, 20% полиэстер. Рекомендуем заказать!</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn-accent flex-1 py-3 text-[13px] flex items-center justify-center gap-2" onclick="toast('Ответ опубликован ✓')"><i data-lucide="send" class="w-4 h-4"></i>Отправить</button>
+                    <button class="btn-ghost w-12 flex items-center justify-center"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                </div>
+            </div>
 
-                <!-- Feature 3 -->
-                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
-                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <i data-lucide="shield-check" class="w-5 h-5 text-accent"></i>
-                    </div>
-                    <h3 class="text-white font-bold text-base">Модерация ответов</h3>
-                    <p class="text-subtle text-sm leading-relaxed">Выбирай режим: полная автоматика, полуавтомат (одобрение) или ручной. Контролируй каждый ответ.</p>
-                    <div class="flex items-center gap-3 text-xs text-muted">
-                        <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3 text-accent"></i> Авто</span>
-                        <span class="flex items-center gap-1"><i data-lucide="eye" class="w-3 h-3 text-yellow-400"></i> Полуавто</span>
-                        <span class="flex items-center gap-1"><i data-lucide="hand" class="w-3 h-3 text-blue-400"></i> Ручной</span>
-                    </div>
+            <!-- Neutral auto -->
+            <div class="card rcard neu p-4">
+                <div class="flex items-center gap-2 flex-wrap mb-2.5">
+                    <span class="badge bg-yellow/10 text-yellow">3★</span>
+                    <span class="badge bg-purple/10 text-purple">Ozon</span>
+                    <span class="badge bg-green/10 text-green">✓ Авто</span>
+                    <span class="text-muted text-[11px] ml-auto">1 ч</span>
                 </div>
-
-                <!-- Feature 4 -->
-                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
-                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <i data-lucide="users" class="w-5 h-5 text-accent"></i>
-                    </div>
-                    <h3 class="text-white font-bold text-base">Мультиаккаунт</h3>
-                    <p class="text-subtle text-sm leading-relaxed">Подключи до 50 магазинов с одного бота. Управляй всеми отзывами из единого интерфейса.</p>
-                    <div class="flex -space-x-1">
-                        <div class="w-6 h-6 rounded bg-purple-500/30 border border-bg flex items-center justify-center text-[8px] text-purple-300">WB1</div>
-                        <div class="w-6 h-6 rounded bg-blue-500/30 border border-bg flex items-center justify-center text-[8px] text-blue-300">WB2</div>
-                        <div class="w-6 h-6 rounded bg-sky-500/30 border border-bg flex items-center justify-center text-[8px] text-sky-300">OZ1</div>
-                        <div class="w-6 h-6 rounded bg-card border border-bg flex items-center justify-center text-[8px] text-muted">+47</div>
-                    </div>
-                </div>
-
-                <!-- Feature 5 -->
-                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
-                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-accent"></i>
-                    </div>
-                    <h3 class="text-white font-bold text-base">Аналитика отзывов</h3>
-                    <p class="text-subtle text-sm leading-relaxed">Графики тональности, топ проблем, динамика рейтинга. Понимай, что болит у клиентов.</p>
-                    <div class="flex items-end gap-1 h-8">
-                        <div class="w-2 bg-green-500/40 rounded-t" style="height:60%"></div>
-                        <div class="w-2 bg-green-500/40 rounded-t" style="height:80%"></div>
-                        <div class="w-2 bg-red-500/40 rounded-t" style="height:40%"></div>
-                        <div class="w-2 bg-green-500/40 rounded-t" style="height:90%"></div>
-                        <div class="w-2 bg-yellow-500/40 rounded-t" style="height:50%"></div>
-                        <div class="w-2 bg-green-500/40 rounded-t" style="height:100%"></div>
-                        <div class="w-2 bg-green-500/40 rounded-t" style="height:75%"></div>
-                    </div>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
-                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                        <i data-lucide="alert-triangle" class="w-5 h-5 text-accent"></i>
-                    </div>
-                    <h3 class="text-white font-bold text-base">Алерты на 1★ и 2★</h3>
-                    <p class="text-subtle text-sm leading-relaxed">Мгновенные уведомления в Telegram при негативных отзывах. Реагируй первым, пока клиент не ушел.</p>
-                    <div class="bg-red-500/5 border border-red-500/20 rounded-lg p-2.5 text-xs text-red-400 flex items-center gap-2">
-                        <i data-lucide="bell-ring" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                        ⚠️ Новый отзыв 1★ — «Курьер не дозвонился...»
-                    </div>
-                </div>
+                <p class="text-fg text-[13px] font-medium mb-1">Олег В.</p>
+                <p class="text-subtle text-[13px] leading-relaxed mb-3">Нормально, но пахнет химозой. После стирки прошло.</p>
+                <details class="group">
+                    <summary class="text-accent text-[12px] font-semibold cursor-pointer flex items-center gap-1">Показать ответ <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i></summary>
+                    <div class="text-subtle text-[13px] leading-relaxed mt-2.5 p-3 bg-surface rounded-lg border border-border">Олег, благодарим за отзыв! Запах уходит после первой стирки. Рады, что в целом довольны.</div>
+                </details>
             </div>
         </div>
-    </section>
-
-    <!-- HOW IT WORKS -->
-    <section id="how" class="py-24 bg-surface border-y border-border relative">
-        <div class="glow-orb w-[500px] h-[500px] bg-accent top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="opacity:0.08;"></div>
-        <div class="max-w-7xl mx-auto px-6 relative z-10">
-            <div class="section-reveal mb-16 text-center">
-                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Процесс</span>
-                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ЗАПУСК ЗА 3 МИНУТЫ</h2>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-6 lg:gap-8 section-reveal">
-                <div class="relative">
-                    <div class="bg-card border border-border rounded-2xl p-7 space-y-5 h-full">
-                        <div class="text-5xl font-black text-accent/20">01</div>
-                        <h3 class="text-white font-bold text-lg">Подключи API</h3>
-                        <p class="text-subtle text-sm leading-relaxed">Вставь API-ключ от Wildberries и/или Ozon в бота. Ключи хранятся зашифрованными на серверах Telegram.</p>
-                        <div class="bg-surface rounded-lg p-3 text-xs font-mono text-muted">
-                            /api wb_abc123...<br>
-                            /api oz_xyz789...
-                        </div>
-                    </div>
-                    <div class="hidden md:block absolute top-1/2 -right-4 translate-x-1/2 z-20">
-                        <i data-lucide="chevron-right" class="w-6 h-6 text-accent/40"></i>
-                    </div>
-                </div>
-
-                <div class="relative">
-                    <div class="bg-card border border-border rounded-2xl p-7 space-y-5 h-full">
-                        <div class="text-5xl font-black text-accent/20">02</div>
-                        <h3 class="text-white font-bold text-lg">Настрой промпт</h3>
-                        <p class="text-subtle text-sm leading-relaxed">Задай тон общения, ключевые преимущества бренда, контактные данные. Бот будет использовать это в каждом ответе.</p>
-                        <div class="bg-surface rounded-lg p-3 text-xs text-muted">
-                            Тон: дружелюбный, профессиональный<br>
-                            Бренд: «ТекстильПро»<br>
-                            Скидка при жалобе: 10%
-                        </div>
-                    </div>
-                    <div class="hidden md:block absolute top-1/2 -right-4 translate-x-1/2 z-20">
-                        <i data-lucide="chevron-right" class="w-6 h-6 text-accent/40"></i>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="bg-card border border-accent/30 rounded-2xl p-7 space-y-5 h-full relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-                        <div class="text-5xl font-black text-accent/40 relative">03</div>
-                        <h3 class="text-white font-bold text-lg relative">Получай ответы</h3>
-                        <p class="text-subtle text-sm leading-relaxed relative">Бот мониторит отзывы 24/7 и мгновенно отвечает. Ты видишь лог в боте и можешь всё контролировать.</p>
-                        <div class="bg-accent/5 border border-accent/20 rounded-lg p-3 text-xs text-accent flex items-center gap-2 relative">
-                            <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
-                            Бот активен. Обработано 47 отзывов сегодня.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CASES / TRANSFORMATION -->
-    <section id="cases" class="py-24">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="section-reveal mb-16">
-                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Кейсы</span>
-                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">РЕАЛЬНЫЕ РЕЗУЛЬТАТЫ СЕЛЛЕРОВ</h2>
-            </div>
-
-            <!-- Tab switcher -->
-            <div class="flex gap-2 mb-8 section-reveal flex-wrap">
-                <button class="tab-btn active px-5 py-2.5 rounded-lg text-sm" onclick="switchCase('wb')">Wildberries</button>
-                <button class="tab-btn px-5 py-2.5 rounded-lg text-sm text-subtle" onclick="switchCase('ozon')">Ozon</button>
-            </div>
-
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 section-reveal">
-                <!-- Case 1 -->
-                <div class="bg-card border border-border rounded-2xl p-6 space-y-5 card-hover">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-xs font-bold">ТД</div>
-                            <div>
-                                <div class="text-white text-sm font-semibold">ТекстильДизайн</div>
-                                <div class="text-muted text-xs">Одежда · 12K товаров</div>
-                            </div>
-                        </div>
-                        <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold" id="case-platform-1">WB</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-muted text-xs mb-1">Рейтинг</div>
-                            <div class="text-white font-bold">4.2 → <span class="text-green-400">4.7</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Время ответа</div>
-                            <div class="text-white font-bold">4ч → <span class="text-accent">2с</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Ответов/мес</div>
-                            <div class="text-white font-bold"><span class="text-accent">3,240</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Конверсия</div>
-                            <div class="text-white font-bold">+<span class="text-green-400">23%</span></div>
-                        </div>
-                    </div>
-                    <div class="border-t border-border pt-4">
-                        <p class="text-subtle text-xs leading-relaxed">«Репа повысила наш рейтинг с 4.2 до 4.7 за 6 недель. Негативные отзывы теперь обрабатываются моментально — клиенты часто меняют оценку.»</p>
-                    </div>
-                </div>
-
-                <!-- Case 2 -->
-                <div class="bg-card border border-border rounded-2xl p-6 space-y-5 card-hover">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">ЗТ</div>
-                            <div>
-                                <div class="text-white text-sm font-semibold">ЗооТовары24</div>
-                                <div class="text-muted text-xs">Товары для животных · 3K</div>
-                            </div>
-                        </div>
-                        <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold" id="case-platform-2">WB</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-muted text-xs mb-1">Рейтинг</div>
-                            <div class="text-white font-bold">4.5 → <span class="text-green-400">4.9</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Возвраты</div>
-                            <div class="text-white font-bold">-<span class="text-green-400">31%</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Ответов/мес</div>
-                            <div class="text-white font-bold"><span class="text-accent">1,890</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Довольных</div>
-                            <div class="text-white font-bold">+<span class="text-green-400">47%</span></div>
-                        </div>
-                    </div>
-                    <div class="border-t border-border pt-4">
-                        <p class="text-subtle text-xs leading-relaxed">«Раньше мы не успевали отвечать на 60% отзывов. Теперь ответ на каждый — за 2 секунды. Возвраты снизились на треть.»</p>
-                    </div>
-                </div>
-
-                <!-- Case 3 -->
-                <div class="bg-card border border-border rounded-2xl p-6 space-y-5 card-hover">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">ЭЛ</div>
-                            <div>
-                                <div class="text-white text-sm font-semibold">Электроника Плюс</div>
-                                <div class="text-muted text-xs">Электроника · 8K товаров</div>
-                            </div>
-                        </div>
-                        <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold" id="case-platform-3">WB</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-muted text-xs mb-1">Рейтинг</div>
-                            <div class="text-white font-bold">3.8 → <span class="text-green-400">4.5</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Позиции в поиске</div>
-                            <div class="text-white font-bold">+<span class="text-green-400">12 позиций</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Ответов/мес</div>
-                            <div class="text-white font-bold"><span class="text-accent">5,670</span></div>
-                        </div>
-                        <div>
-                            <div class="text-muted text-xs mb-1">Выручка</div>
-                            <div class="text-white font-bold">+<span class="text-green-400">34%</span></div>
-                        </div>
-                    </div>
-                    <div class="border-t border-border pt-4">
-                        <p class="text-subtle text-xs leading-relaxed">«С ростом рейтинга выросли позиции в поиске. Выручка увеличилась на 34%. Репа — лучший инструмент для селлера.»</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- PRICING -->
-    <section id="pricing" class="py-24 bg-surface border-y border-border">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="section-reveal mb-16 text-center">
-                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Тарифы</span>
-                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ВЫБЕРИ СВОЙ ПЛАН</h2>
-                <p class="text-subtle mt-4 max-w-md mx-auto text-sm">7 дней бесплатно на любом тарифе. Без привязки карты.</p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-5 section-reveal">
-                <!-- Starter -->
-                <div class="bg-card border border-border rounded-2xl p-7 space-y-6 card-hover flex flex-col">
-                    <div>
-                        <h3 class="text-white font-bold text-lg">Старт</h3>
-                        <p class="text-muted text-xs mt-1">Для небольших магазинов</p>
-                    </div>
-                    <div>
-                        <span class="text-4xl font-black text-white">990₽</span>
-                        <span class="text-muted text-sm">/мес</span>
-                    </div>
-                    <ul class="space-y-3 text-sm text-subtle flex-1">
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>1 магазин</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 500 ответов/мес</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>GPT-4o мини</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>5 шаблонов</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Уведомления о негативе</li>
-                        <li class="flex items-start gap-2.5 text-muted"><i data-lucide="x" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>Аналитика</li>
-                        <li class="flex items-start gap-2.5 text-muted"><i data-lucide="x" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>API</li>
-                    </ul>
-                    <a href="https://t.me/repa_bot" target="_blank" class="btn-outline w-full py-3 rounded-xl text-sm text-center block">Начать бесплатно</a>
-                </div>
-
-                <!-- Pro -->
-                <div class="bg-card border-2 border-accent rounded-2xl p-7 space-y-6 relative overflow-hidden flex flex-col">
-                    <div class="absolute top-0 right-0 bg-accent text-black text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-lg">Популярный</div>
-                    <div>
-                        <h3 class="text-white font-bold text-lg">Про</h3>
-                        <p class="text-muted text-xs mt-1">Для растущего бизнеса</p>
-                    </div>
-                    <div>
-                        <span class="text-4xl font-black text-gradient">2,490₽</span>
-                        <span class="text-muted text-sm">/мес</span>
-                    </div>
-                    <ul class="space-y-3 text-sm text-subtle flex-1">
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 5 магазинов</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 5,000 ответов/мес</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>GPT-4o полный</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Безлимит шаблонов</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Аналитика отзывов</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Полуавтомат режим</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Приоритетная поддержка</li>
-                    </ul>
-                    <a href="https://t.me/repa_bot" target="_blank" class="btn-primary w-full py-3 rounded-xl text-sm text-center block">Начать бесплатно</a>
-                </div>
-
-                <!-- Enterprise -->
-                <div class="bg-card border border-border rounded-2xl p-7 space-y-6 card-hover flex flex-col">
-                    <div>
-                        <h3 class="text-white font-bold text-lg">Бизнес</h3>
-                        <p class="text-muted text-xs mt-1">Для крупных селлеров</p>
-                    </div>
-                    <div>
-                        <span class="text-4xl font-black text-white">5,990₽</span>
-                        <span class="text-muted text-sm">/мес</span>
-                    </div>
-                    <ul class="space-y-3 text-sm text-subtle flex-1">
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 50 магазинов</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Безлимит ответов</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>GPT-4o + кастомная модель</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Полная аналитика</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>API доступ</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Webhook интеграции</li>
-                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Персональный менеджер</li>
-                    </ul>
-                    <a href="https://t.me/repa_bot" target="_blank" class="btn-outline w-full py-3 rounded-xl text-sm text-center block">Связаться</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FAQ -->
-    <section id="faq" class="py-24">
-        <div class="max-w-3xl mx-auto px-6">
-            <div class="section-reveal mb-16 text-center">
-                <span class="text-accent text-xs uppercase tracking-widest font-semibold">FAQ</span>
-                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ЧАСТЫЕ ВОПРОСЫ</h2>
-            </div>
-
-            <div class="space-y-3 section-reveal">
-                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
-                    <div class="flex items-center justify-between p-5">
-                        <span class="text-white text-sm font-semibold pr-4">Бот может удалить отрицательный отзыв?</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
-                    </div>
-                    <div class="faq-answer px-5">
-                        <p class="text-subtle text-sm leading-relaxed pb-5">Нет, удалить отзыв невозможно — это нарушение политики площадок. Но быстрый и вежливый ответ часто мотивирует покупателя изменить оценку на более высокую или дополнить отзыв. По нашей статистике, 34% покупателей повышают оценку после получения ответа.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
-                    <div class="flex items-center justify-between p-5">
-                        <span class="text-white text-sm font-semibold pr-4">Насколько ответы выглядят естественно, а не как от бота?</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
-                    </div>
-                    <div class="faq-answer px-5">
-                        <p class="text-subtle text-sm leading-relaxed pb-5">Мы используем GPT-4o с тонкой настройкой под e-commerce. Ответы содержат контекст отзыва, не используют шаблонные фразы и адаптируются под тональность. В A/B тестах 89% покупателей не отличили ответ бота от человеческого.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
-                    <div class="flex items-center justify-between p-5">
-                        <span class="text-white text-sm font-semibold pr-4">Безопасно ли передавать API-ключи боту?</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
-                    </div>
-                    <div class="faq-answer px-5">
-                        <p class="text-subtle text-sm leading-relaxed pb-5">Да. Ключи хранятся в зашифрованном виде на серверах Telegram (BotFather infrastructure). Мы не имеем доступа к ключам в открытом виде. Бот использует их только для чтения отзывов и отправки ответов через официальные API маркетплейсов.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
-                    <div class="flex items-center justify-between p-5">
-                        <span class="text-white text-sm font-semibold pr-4">Что если бот напишет что-то неуместное?</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
-                    </div>
-                    <div class="faq-answer px-5">
-                        <p class="text-subtle text-sm leading-relaxed pb-5">Используй полуавтоматический режим — бот подготовит ответ, а ты одобришь его перед отправкой. Также есть фильтр prohibited-контента и blacklist слов. За 14M+ ответов не было ни одного инцидента.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
-                    <div class="flex items-center justify-between p-5">
-                        <span class="text-white text-sm font-semibold pr-4">Работает ли с новыми отзывами или только с существующими?</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
-                    </div>
-                    <div class="faq-answer px-5">
-                        <p class="text-subtle text-sm leading-relaxed pb-5">Бот мониторит новые отзывы в реальном времени (раз в 30-60 секунд). Также есть команда для массовой обработки старых безответных отзывов — полезно при первом подключении.</p>
-                    </div>
-                </div>
-
-                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
-                    <div class="flex items-center justify-between p-5">
-                        <span class="text-white text-sm font-semibold pr-4">Можно ли отменить подписку в любой момент?</span>
-                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
-                    </div>
-                    <div class="faq-answer px-5">
-                        <p class="text-subtle text-sm leading-relaxed pb-5">Да, отмена в один клик прямо в боте. Без скрытых условий, без удержания средств. После отмены бот перестанет отвечать на новые отзывы, но все настройки сохранятся на случай возвращения.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FINAL CTA -->
-    <section class="py-24 relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-b from-accent/5 via-accent/10 to-transparent"></div>
-        <div class="glow-orb w-[800px] h-[400px] bg-accent bottom-0 left-1/2 -translate-x-1/2" style="opacity:0.1;"></div>
-        <div class="max-w-3xl mx-auto px-6 text-center relative z-10 section-reveal">
-            <div class="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-6">
-                <i data-lucide="rocket" class="w-3.5 h-3.5 text-accent"></i>
-                <span class="text-xs text-accent font-semibold">7 дней бесплатно</span>
-            </div>
-            <h2 class="text-3xl lg:text-5xl font-black text-white tracking-tight leading-tight">ПОКАЖИ КЛИЕНТАМ,<br>ЧТО ТЫ СЛЫШИШЬ<br>ИХ <span class="text-gradient">КАЖДЫЙ ОТЗЫВ</span></h2>
-            <p class="text-subtle mt-6 max-w-md mx-auto text-sm leading-relaxed">Подключи Репу за 3 минуты и начни отвечать на отзывы автоматически. Пока твои конкуренты спят — ты растёшь.</p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-                <a href="https://t.me/repa_bot" target="_blank" class="btn-primary px-8 py-4 rounded-xl text-sm inline-flex items-center justify-center gap-2.5">
-                    <i data-lucide="send" class="w-4 h-4"></i>
-                    Запустить бота в Telegram
-                </a>
-            </div>
-            <p class="text-muted text-xs mt-4">Без карты · Настройка за 3 минуты · Отмена в 1 клик</p>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="border-t border-border bg-surface py-12">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid md:grid-cols-4 gap-8 mb-10">
-                <div class="md:col-span-2">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center">
-                            <span class="text-black font-black text-sm">Р</span>
-                        </div>
-                        <span class="text-white font-bold text-lg tracking-tight">РЕПА</span>
-                    </div>
-                    <p class="text-muted text-sm leading-relaxed max-w-sm">ИИ-бот для автоматических ответов на отзывы Wildberries и Ozon. Повышай рейтинг и лояльность клиентов на автопилоте.</p>
-                    <div class="flex gap-3 mt-5">
-                        <a href="https://t.me/repa_bot" target="_blank" class="w-9 h-9 rounded-lg bg-card border border-border flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all">
-                            <i data-lucide="send" class="w-4 h-4"></i>
-                        </a>
-                        <a href="#" class="w-9 h-9 rounded-lg bg-card border border-border flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all">
-                            <i data-lucide="message-circle" class="w-4 h-4"></i>
-                        </a>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-white font-semibold text-sm mb-4">Продукт</h4>
-                    <ul class="space-y-2.5">
-                        <li><a href="#features" class="text-muted text-sm hover:text-white transition-colors">Функции</a></li>
-                        <li><a href="#pricing" class="text-muted text-sm hover:text-white transition-colors">Тарифы</a></li>
-                        <li><a href="#cases" class="text-muted text-sm hover:text-white transition-colors">Кейсы</a></li>
-                        <li><a href="#faq" class="text-muted text-sm hover:text-white transition-colors">FAQ</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="text-white font-semibold text-sm mb-4">Контакты</h4>
-                    <ul class="space-y-2.5">
-                        <li><a href="https://t.me/repa_bot" target="_blank" class="text-muted text-sm hover:text-white transition-colors">Telegram бот</a></li>
-                        <li><a href="https://t.me/repa_support" target="_blank" class="text-muted text-sm hover:text-white transition-colors">Поддержка</a></li>
-                        <li><a href="#" class="text-muted text-sm hover:text-white transition-colors">Блог</a></li>
-                        <li><a href="#" class="text-muted text-sm hover:text-white transition-colors">Документация API</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-                <p class="text-muted text-xs">© 2025 РЕПА. Все права защищены.</p>
-                <div class="flex gap-6">
-                    <a href="#" class="text-muted text-xs hover:text-white transition-colors">Политика конфиденциальности</a>
-                    <a href="#" class="text-muted text-xs hover:text-white transition-colors">Оферта</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- TOAST NOTIFICATION -->
-    <div id="toast" class="fixed bottom-6 right-6 z-[100] bg-card border border-green-500/30 rounded-xl px-5 py-3 shadow-lg shadow-black/50 flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-        <i data-lucide="check-circle" class="w-5 h-5 text-green-400 flex-shrink-0"></i>
-        <span id="toast-text" class="text-white text-sm"></span>
     </div>
+</div>
 
-    <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
+<!-- ═══════════ AI SETTINGS ═══════════ -->
+<div id="pg-ai" class="page">
+    <div class="px-5 pt-14 pb-6">
+        <h1 class="text-white text-xl font-bold mb-6">Настройки AI</h1>
 
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        mobileMenuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-        // Close mobile menu on link click
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.add('hidden');
-            });
-        });
+        <!-- Models -->
+        <p class="text-subtle text-[11px] font-semibold uppercase tracking-widest mb-3">AI Модель</p>
+        <div class="space-y-2 mb-6">
+            <div class="card p-4 flex items-center gap-3 border-accent/30" style="background:rgb(var(--accent)/.05)">
+                <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0"><i data-lucide="sparkles" class="w-5 h-5 text-accent"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-white text-[13px] font-semibold">Qwen Plus</p><p class="text-muted text-[11px]">OpenRouter · Лучшее качество</p></div>
+                <span class="w-5 h-5 rounded-full bg-accent flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-3 h-3 text-black"></i></div>
+            </div>
+            <div class="card p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue/10 flex items-center justify-center flex-shrink-0"><i data-lucide="zap" class="w-5 h-5 text-blue"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-semibold">Llama 3.1 8B</p><p class="text-muted text-[11px]">OpenRouter · Быстрая</p></div>
+            </div>
+            <div class="card p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="rocket" class="w-5 h-5 text-green"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-semibold">Groq Llama 70B</p><p class="text-muted text-[11px]">Ultra-быстрый инференс</p></div>
+            </div>
+            <div class="card p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple/10 flex items-center justify-center flex-shrink-0"><i data-lucide="globe" class="w-5 h-5 text-purple"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-semibold">GigaChat</p><p class="text-muted text-[11px]">Russian-focused</p></div>
+            </div>
+        </div>
 
-        // Scroll reveal
-        const revealElements = document.querySelectorAll('.section-reveal');
-        const revealObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-        revealElements.forEach(el => revealObserver.observe(el));
+        <!-- Tones -->
+        <p class="text-subtle text-[11px] font-semibold uppercase tracking-widest mb-3">Тональность ответов</p>
+        <div class="flex flex-wrap gap-2 mb-6" id="tones">
+            <button class="chip" onclick="chipSel(this)">🏢 Официальный</button>
+            <button class="chip on" onclick="chipSel(this)">😊 Дружелюбный</button>
+            <button class="chip" onclick="chipSel(this)">📋 Формальный</button>
+            <button class="chip" onclick="chipSel(this)">💰 Продающий</button>
+            <button class="chip" onclick="chipSel(this)">🎓 Экспертный</button>
+            <button class="chip" onclick="chipSel(this)">😄 С юмором</button>
+            <button class="chip" onclick="chipSel(this)">❤️ Сочувствующий</button>
+            <button class="chip" onclick="chipSel(this)">⚡ Лаконичный</button>
+        </div>
 
-        // FAQ toggle
-        function toggleFaq(item) {
-            const isOpen = item.classList.contains('open');
-            // Close all
-            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-            // Open clicked if it was closed
-            if (!isOpen) {
-                item.classList.add('open');
-            }
-        }
+        <!-- Brand Voice -->
+        <p class="text-subtle text-[11px] font-semibold uppercase tracking-widest mb-3">Brand Voice</p>
+        <div class="card p-4 space-y-4 mb-6">
+            <div>
+                <label class="text-fg text-[13px] font-medium block mb-1.5">Название бренда</label>
+                <input type="text" value="ТекстильПро" class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-fg text-[13px]">
+            </div>
+            <div>
+                <label class="text-fg text-[13px] font-medium block mb-1.5">Описание бренда</label>
+                <textarea rows="2" class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-fg text-[13px] resize-none">Российский бренд одежды. Натуральные ткани, собственное производство.</textarea>
+            </div>
+            <div>
+                <label class="text-fg text-[13px] font-medium block mb-1.5">Ключевые преимущества</label>
+                <input type="text" value="Собственное производство, натуральные ткани" class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-fg text-[13px]">
+            </div>
+            <div>
+                <label class="text-fg text-[13px] font-medium block mb-1.5">Скидка при жалобе</label>
+                <input type="text" value="15%, промокод SORRY15" class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-fg text-[13px]">
+            </div>
+        </div>
+        <div class="flex items-center gap-2 mb-6 px-1">
+            <i data-lucide="brain" class="w-3.5 h-3.5 text-accent flex-shrink-0"></i>
+            <span class="text-muted text-[11px]">AI обучается на ваших лайках/дизлайках</span>
+        </div>
 
-        // Case tab switcher
-        function switchCase(platform) {
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.add('text-subtle');
-            });
-            event.target.classList.add('active');
-            event.target.classList.remove('text-subtle');
+        <!-- Brand Safety -->
+        <p class="text-subtle text-[11px] font-semibold uppercase tracking-widest mb-3">Brand Safety</p>
+        <div class="card p-4 space-y-4 mb-6">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Фильтр запрещённых слов</p><p class="text-muted text-[11px]">Чёрный список: 23 слова</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Белый список слов</p><p class="text-muted text-[11px]">Обязательные: 8 слов</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Защита от Prompt Injection</p><p class="text-muted text-[11px]">Блокировка вредоносных отзывов</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Проверка уникальности</p><p class="text-muted text-[11px]">Сравнение с предыдущими</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Self-Critique</p><p class="text-muted text-[11px]">AI перепроверяет свой ответ</p></div>
+                <div class="tog" onclick="this.classList.toggle('on')"></div>
+            </div>
+        </div>
 
-            const labels = document.querySelectorAll('[id^="case-platform-"]');
-            labels.forEach(label => {
-                label.textContent = platform.toUpperCase();
-            });
-        }
+        <!-- Monitoring -->
+        <p class="text-subtle text-[11px] font-semibold uppercase tracking-widest mb-3">Авто-мониторинг</p>
+        <div class="card p-4 space-y-4 mb-6">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">WB мониторинг</p><p class="text-muted text-[11px]">Каждые 15 минут</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Ozon мониторинг</p><p class="text-muted text-[11px]">Каждые 15 минут</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Smart Monitor</p><p class="text-muted text-[11px]">Адаптивная задержка</p></div>
+                <div class="tog" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Режим модерации</p><p class="text-muted text-[11px]">Одобрение для негативных</p></div>
+                <div class="tog on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Follow-up</p><p class="text-muted text-[11px]">Отслеживание изменений оценки</p></div>
+                <div class="tog" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0"><p class="text-fg text-[13px] font-medium">Вопросы покупателей</p><p class="text-muted text-[11px]">Авто-ответы на вопросы</p></div>
+                <div class="tog" onclick="this.classList.toggle('on')"></div>
+            </div>
+        </div>
 
-        // Toast notification
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const toastText = document.getElementById('toast-text');
-            toastText.textContent = message;
-            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-                toast.classList.remove('translate-y-0', 'opacity-100');
-            }, 2500);
-        }
+        <button class="btn-accent w-full py-3.5 text-[14px]" onclick="toast('Настройки сохранены ✓')">Сохранить настройки</button>
+    </div>
+</div>
 
-        // Navbar background on scroll
-        const nav = document.querySelector('nav');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                nav.style.borderBottomColor = '#1E1E1E';
-            } else {
-                nav.style.borderBottomColor = 'transparent';
-            }
-        });
+<!-- ═══════════ PROFILE ═══════════ -->
+<div id="pg-prof" class="page">
+    <div class="px-5 pt-14 pb-6">
+        <h1 class="text-white text-xl font-bold mb-6">Профиль</h1>
 
-        // Simulate typing effect for AI reply on load (subtle)
-        window.addEventListener('load', () => {
-            const replyEl = document.getElementById('reply-text');
-            const fullText = replyEl.textContent;
-            replyEl.textContent = '';
-            replyEl.style.opacity = '1';
-            let i = 0;
-            const speed = 8;
-            function typeChar() {
-                if (i < fullText.length) {
-                    replyEl.textContent += fullText.charAt(i);
-                    i++;
-                    setTimeout(typeChar, speed);
-                }
-            }
-            setTimeout(typeChar, 1500);
-        });
-    </script>
+        <!-- User -->
+        <div class="card p-5 mb-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-28 h-28 rounded-full -translate-y-1/2 translate-x-1/2" style="background:rgb(var(--accent)/.06)"></div>
+            <div class="flex items-center gap-4 mb-4 relative">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-yellow-500 flex items-center justify-center text-black font-black text-xl flex-shrink-0">12</div>
+                <div class="min-w-0">
+                    <p class="text-white text-lg font-bold">Алексей</p>
+                    <p class="text-muted text-[13px]">@alex_seller · Уровень 12</p>
+                    <div class="flex items-center gap-2 mt-1.5">
+                        <span class="badge bg-xp/10 text-xp">2 340 XP</span>
+                        <span class="badge bg-accent/10 text-accent">PRO Trial</span>
+                    </div>
+                </div>
+            </div>
+            <div class="pbar relative"><div class="pfill bg-gradient-to-r from-xp to-yellow-400" style="width:78%"></div></div>
+            <p class="text-muted text-[11px] mt-2">660 XP до уровня 13 · Серия: 7 дней 🔥</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-2.5 mb-6">
+            <div class="card p-3 text-center"><p class="text-white text-lg font-black">1 247</p><p class="text-muted text-[11px]">Всего ответов</p></div>
+            <div class="card p-3 text-center"><p class="text-white text-lg font-black">94%</p><p class="text-muted text-[11px]">Уникальность</p></div>
+            <div class="card p-3 text-center"><p class="text-white text-lg font-black">2.1с</p><p class="text-muted text-[11px]">Ср. время</p></div>
+        </div>
+
+        <!-- Achievements scroll -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-white text-sm font-bold">Достижения</h3>
+                <button class="text-muted text-[13px]" onclick="openSub('game')">Все →</button>
+            </div>
+            <div class="flex gap-2.5 overflow-x-auto pb-2" style="-webkit-overflow-scrolling:touch">
+                <div class="flex-shrink-0 w-[68px] text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-yellow/10 border border-yellow/20 flex items-center justify-center text-2xl mb-1">🏆</div><span class="text-[10px] text-muted">100 отв.</span></div>
+                <div class="flex-shrink-0 w-[68px] text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center text-2xl mb-1">🔥</div><span class="text-[10px] text-muted">Серия 7</span></div>
+                <div class="flex-shrink-0 w-[68px] text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-blue/10 border border-blue/20 flex items-center justify-center text-2xl mb-1">⚡</div><span class="text-[10px] text-muted">Скорость</span></div>
+                <div class="flex-shrink-0 w-[68px] text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-green/10 border border-green/20 flex items-center justify-center text-2xl mb-1">🛡️</div><span class="text-[10px] text-muted">Защитник</span></div>
+                <div class="flex-shrink-0 w-[68px] text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-purple/10 border border-purple/20 flex items-center justify-center text-2xl mb-1">🎯</div><span class="text-[10px] text-muted">Снайпер</span></div>
+                <div class="flex-shrink-0 w-[68px] text-center"><div class="w-14 h-14 mx-auto rounded-2xl bg-card border border-border flex items-center justify-center text-2xl mb-1 opacity-30">🔒</div><span class="text-[10px] text-muted">???</span></div>
+            </div>
+        </div>
+
+        <!-- Shops -->
+        <h3 class="text-white text-sm font-bold mb-3">Магазины</h3>
+        <div class="space-y-2 mb-6">
+            <div class="card p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple/10 flex items-center justify-center flex-shrink-0"><span class="text-purple text-xs font-black">WB</span></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-semibold">ТекстильПро</p><p class="text-muted text-[11px]">12 450 товаров · Активен</p></div>
+                <span class="w-2.5 h-2.5 rounded-full bg-green flex-shrink-0"></span>
+            </div>
+            <div class="card p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-sky/10 flex items-center justify-center flex-shrink-0"><span class="text-sky text-xs font-black">OZ</span></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-semibold">ТекстильПро Ozon</p><p class="text-muted text-[11px]">8 200 товаров · Активен</p></div>
+                <span class="w-2.5 h-2.5 rounded-full bg-green flex-shrink-0"></span>
+            </div>
+            <button class="card p-4 flex items-center justify-center gap-2" onclick="toast('Откройте бота для добавления')">
+                <i data-lucide="plus" class="w-4 h-4 text-accent"></i>
+                <span class="text-accent text-[13px] font-semibold">Добавить магазин</span>
+            </button>
+        </div>
+
+        <!-- Menu -->
+        <div class="space-y-2 mb-4">
+            <button class="card p-4 flex items-center gap-3 w-full text-left" onclick="openSub('sub')">
+                <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0"><i data-lucide="crown" class="w-5 h-5 text-accent"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Подписка</p><p class="text-muted text-[11px]">PRO Trial · 5 дней</p></div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
+            </button>
+            <button class="card p-4 flex items-center gap-3 w-full text-left" onclick="openSub('game')">
+                <div class="w-10 h-10 rounded-xl bg-xp/10 flex items-center justify-center flex-shrink-0"><i data-lucide="trophy" class="w-5 h-5 text-xp"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Геймификация</p><p class="text-muted text-[11px]">Уровень 12 · 15 значков</p></div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
+            </button>
+            <button class="card p-4 flex items-center gap-3 w-full text-left" onclick="openSub('ref')">
+                <div class="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="gift" class="w-5 h-5 text-green"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Реферальная программа</p><p class="text-muted text-[11px]">Приглашено: 3 друга</p></div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
+            </button>
+            <button class="card p-4 flex items-center gap-3 w-full text-left" onclick="openSub('anl')">
+                <div class="w-10 h-10 rounded-xl bg-blue/10 flex items-center justify-center flex-shrink-0"><i data-lucide="bar-chart-3" class="w-5 h-5 text-blue"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Аналитика</p><p class="text-muted text-[11px]">Отчёты и графики</p></div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
+            </button>
+            <button class="card p-4 flex items-center gap-3 w-full text-left" onclick="openSub('batch')">
+                <div class="w-10 h-10 rounded-xl bg-purple/10 flex items-center justify-center flex-shrink-0"><i data-lucide="layers" class="w-5 h-5 text-purple"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Пакетная обработка</p><p class="text-muted text-[11px]">До 50 отзывов за раз</p></div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
+            </button>
+            <button class="card p-4 flex items-center gap-3 w-full text-left" onclick="openSub('notif')">
+                <div class="w-10 h-10 rounded-xl bg-red/10 flex items-center justify-center flex-shrink-0"><i data-lucide="bell" class="w-5 h-5 text-red"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Уведомления</p><p class="text-muted text-[11px]">Алерты на 1★ и 2★</p></div>
+                <span class="w-5 h-5 rounded-full bg-red flex items-center justify-center text-[9px] text-white font-bold flex-shrink-0">3</span>
+            </button>
+            <button class="card p-4 flex items-center gap-3 w-full text-left">
+                <div class="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0"><i data-lucide="help-circle" class="w-5 h-5 text-subtle"></i></div>
+                <div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">Помощь</p><p class="text-muted text-[11px]">FAQ и поддержка</p></div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-muted flex-shrink-0"></i>
+            </button>
+        </div>
+        <p class="text-center text-muted text-[11px] pb-2">ReviewBot Pro 4.0 · v4.0.12</p>
+    </div>
+</div>
+
+<!-- ═══════════ SUB: SUBSCRIPTION ═══════════ -->
+<div id="sp-sub" class="sub-page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center gap-3 mb-6">
+            <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="closeSub('sub')"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+            <h1 class="text-white text-xl font-bold">Подписка</h1>
+        </div>
+
+        <div class="card border-accent/30 p-4 mb-5" style="background:rgb(var(--accent)/.05)">
+            <div class="flex items-center justify-between">
+                <div><div class="flex items-center gap-2 mb-1"><i data-lucide="crown" class="w-4 h-4 text-accent"></i><span class="text-accent text-[13px] font-bold">PRO Trial</span></div><p class="text-muted text-[12px]">5 дней · 20 авто-ответов/день</p></div>
+                <p class="text-right"><span class="text-white text-lg font-black">0₽</span><br><span class="text-muted text-[11px]">→ 2 990₽/мес</span></p>
+            </div>
+        </div>
+
+        <div class="space-y-3 mb-5">
+            <div class="card p-4">
+                <div class="flex items-center justify-between mb-3"><div><p class="text-fg text-[13px] font-bold">Free</p><p class="text-muted text-[11px]">3 генерации/день</p></div><p class="text-right"><span class="text-white text-lg font-black">0₽</span><br><span class="text-muted text-[11px]">навсегда</span></p></div>
+                <div class="space-y-1.5 text-[12px] text-subtle">
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-muted"></i>3 генерации в день</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-muted"></i>1 магазин</p>
+                    <p class="flex items-center gap-2 text-muted"><i data-lucide="x" class="w-3.5 h-3.5"></i>Авто-мониторинг</p>
+                    <p class="flex items-center gap-2 text-muted"><i data-lucide="x" class="w-3.5 h-3.5"></i>Все AI модели</p>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <div class="flex items-center justify-between mb-3"><div><p class="text-fg text-[13px] font-bold">Starter</p><p class="text-muted text-[11px]">10 генераций/день</p></div><p class="text-right"><span class="text-white text-lg font-black">299₽</span><br><span class="text-muted text-[11px]">220 ⭐</span></p></div>
+                <div class="space-y-1.5 text-[12px] text-subtle">
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>10 генераций в день</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>3 магазина</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>Все 8 тональностей</p>
+                    <p class="flex items-center gap-2 text-muted"><i data-lucide="x" class="w-3.5 h-3.5"></i>Авто-ответы</p>
+                </div>
+            </div>
+
+            <div class="card border-accent/30 p-4 relative overflow-hidden" style="background:rgb(var(--accent)/.05)">
+                <span class="absolute top-0 right-0 bg-accent text-black text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-bl-lg">Популярный</span>
+                <div class="flex items-center justify-between mb-3"><div><p class="text-grad text-[13px] font-bold">PRO</p><p class="text-muted text-[11px]">Безлимит + авто</p></div><p class="text-right"><span class="text-grad text-lg font-black">2 990₽</span><br><span class="text-muted text-[11px]">2 200 ⭐</span></p></div>
+                <div class="space-y-1.5 text-[12px] text-subtle">
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>Безлимит генераций</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>5 магазинов</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>Авто-мониторинг WB + Ozon</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>Brand Voice + Safety</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>Все AI модели</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-accent"></i>Пакетная обработка</p>
+                </div>
+            </div>
+
+            <div class="card p-4">
+                <div class="flex items-center justify-between mb-3"><div><p class="text-fg text-[13px] font-bold">Business</p><p class="text-muted text-[11px]">Максимум</p></div><p class="text-right"><span class="text-white text-lg font-black">7 490₽</span><br><span class="text-muted text-[11px]">5 500 ⭐</span></p></div>
+                <div class="space-y-1.5 text-[12px] text-subtle">
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green"></i>Всё из PRO</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green"></i>50 магазинов</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green"></i>Приоритетная очередь</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green"></i>API + Webhooks</p>
+                    <p class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green"></i>Персональный менеджер</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seasonal -->
+        <div class="card border-yellow/20 p-4 mb-5" style="background:rgb(var(--yellow)/.05)">
+            <div class="flex items-center gap-2 mb-2"><span class="text-lg">🎄</span><span class="text-yellow text-[11px] font-bold uppercase tracking-widest">Новогоднее событие</span></div>
+            <p class="text-subtle text-[12px] leading-relaxed">До 31 января: XP ×2 за все действия!</p>
+        </div>
+
+        <!-- Payment -->
+        <p class="text-subtle text-[11px] font-semibold uppercase tracking-widest mb-3">Способ оплаты</p>
+        <div class="grid grid-cols-2 gap-2.5 mb-6">
+            <button class="card border-accent/30 p-4 flex items-center justify-center gap-2" style="background:rgb(var(--accent)/.05)"><span class="text-lg">⭐</span><span class="text-accent text-[13px] font-bold">Stars</span></button>
+            <button class="card p-4 flex items-center justify-center gap-2"><i data-lucide="credit-card" class="w-4 h-4 text-subtle"></i><span class="text-fg text-[13px] font-medium">Карта</span></button>
+        </div>
+
+        <button class="btn-accent w-full py-4 text-[14px]" onclick="toast('Переход к оплате...')">Оформить PRO — 2 990₽</button>
+        <p class="text-muted text-[11px] text-center mt-3">Отмена в 1 клик · Без удержания средств</p>
+    </div>
+</div>
+
+<!-- ═══════════ SUB: GAMIFICATION ═══════════ -->
+<div id="sp-game" class="sub-page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center gap-3 mb-6">
+            <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="closeSub('game')"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+            <h1 class="text-white text-xl font-bold">Геймификация</h1>
+        </div>
+
+        <div class="card p-5 mb-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-1/2 translate-x-1/2" style="background:rgb(var(--xp)/.06)"></div>
+            <div class="flex items-center gap-4 mb-3 relative">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-xp to-yellow-400 flex items-center justify-center text-black font-black text-xl flex-shrink-0">12</div>
+                <div><p class="text-white text-lg font-bold">Уровень 12</p><p class="text-muted text-[12px]">«Опытный селлер»</p></div>
+            </div>
+            <div class="pbar mb-2 relative"><div class="pfill bg-gradient-to-r from-xp to-yellow-400" style="width:78%"></div></div>
+            <div class="flex justify-between text-[11px] relative"><span class="text-xp font-bold">2 340 XP</span><span class="text-muted">3 000 — Уровень 13</span></div>
+        </div>
+
+        <div class="card p-4 mb-5 flex items-center gap-4">
+            <span class="text-3xl flex-shrink-0">🔥</span>
+            <div class="flex-1 min-w-0"><p class="text-white font-bold text-[14px]">Серия 7 дней</p><p class="text-muted text-[12px]">Ответьте сегодня для продолжения</p></div>
+            <div class="flex gap-0.5 flex-shrink-0">
+                <div class="w-3 h-7 rounded-sm bg-xp"></div><div class="w-3 h-7 rounded-sm bg-xp"></div><div class="w-3 h-7 rounded-sm bg-xp"></div><div class="w-3 h-7 rounded-sm bg-xp"></div><div class="w-3 h-7 rounded-sm bg-xp"></div><div class="w-3 h-7 rounded-sm bg-xp"></div><div class="w-3 h-7 rounded-sm bg-xp"></div>
+                <div class="w-3 h-7 rounded-sm bg-border"></div><div class="w-3 h-7 rounded-sm bg-border"></div><div class="w-3 h-7 rounded-sm bg-border"></div>
+            </div>
+        </div>
+
+        <h3 class="text-white text-sm font-bold mb-3">Значки (15/20)</h3>
+        <div class="grid grid-cols-5 gap-2 mb-6">
+            <div class="card p-2 text-center"><div class="text-xl">🏆</div><span class="text-[9px] text-muted block mt-0.5">100 отв.</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🔥</div><span class="text-[9px] text-muted block mt-0.5">Серия 7</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">⚡</div><span class="text-[9px] text-muted block mt-0.5">Скорость</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🛡️</div><span class="text-[9px] text-muted block mt-0.5">Защитник</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🎯</div><span class="text-[9px] text-muted block mt-0.5">Снайпер</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">💬</div><span class="text-[9px] text-muted block mt-0.5">500 отв.</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🌟</div><span class="text-[9px] text-muted block mt-0.5">1K отв.</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">👑</div><span class="text-[9px] text-muted block mt-0.5">PRO</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🤝</div><span class="text-[9px] text-muted block mt-0.5">Реферал</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">📖</div><span class="text-[9px] text-muted block mt-0.5">Наставник</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🎨</div><span class="text-[9px] text-muted block mt-0.5">Тональн.</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">📦</div><span class="text-[9px] text-muted block mt-0.5">Пакет 50</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🌐</div><span class="text-[9px] text-muted block mt-0.5">WB+Ozon</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">📊</div><span class="text-[9px] text-muted block mt-0.5">Аналитик</span></div>
+            <div class="card p-2 text-center"><div class="text-xl">🎄</div><span class="text-[9px] text-muted block mt-0.5">НГ 2025</span></div>
+            <div class="card p-2 text-center opacity-25"><div class="text-xl">🔒</div><span class="text-[9px] text-muted block mt-0.5">???</span></div>
+            <div class="card p-2 text-center opacity-25"><div class="text-xl">🔒</div><span class="text-[9px] text-muted block mt-0.5">???</span></div>
+            <div class="card p-2 text-center opacity-25"><div class="text-xl">🔒</div><span class="text-[9px] text-muted block mt-0.5">???</span></div>
+            <div class="card p-2 text-center opacity-25"><div class="text-xl">🔒</div><span class="text-[9px] text-muted block mt-0.5">???</span></div>
+            <div class="card p-2 text-center opacity-25"><div class="text-xl">🔒</div><span class="text-[9px] text-muted block mt-0.5">???</span></div>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-white text-sm font-bold">Лидеры</h3>
+            <div class="flex gap-1.5"><button class="chip on text-[11px] py-1.5 px-3" onclick="chipSel(this)">Неделя</button><button class="chip text-[11px] py-1.5 px-3" onclick="chipSel(this)">Месяц</button></div>
+        </div>
+        <div class="space-y-2 mb-5">
+            <div class="lb-row gold"><span class="text-yellow font-black text-sm w-5">1</span><div class="w-9 h-9 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">МК</div><div class="flex-1 min-w-0"><p class="text-white text-[13px] font-semibold">МаксКросс</p><p class="text-muted text-[11px]">Ур. 18</p></div><span class="text-xp text-[12px] font-bold flex-shrink-0">4 820</span></div>
+            <div class="lb-row silver"><span class="text-silver font-black text-sm w-5">2</span><div class="w-9 h-9 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">ОЛ</div><div class="flex-1 min-w-0"><p class="text-white text-[13px] font-semibold">ОдеждаЛюкс</p><p class="text-muted text-[11px]">Ур. 16</p></div><span class="text-xp text-[12px] font-bold flex-shrink-0">3 940</span></div>
+            <div class="lb-row bronze"><span class="text-orange-400 font-black text-sm w-5">3</span><div class="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">ТД</div><div class="flex-1 min-w-0"><p class="text-white text-[13px] font-semibold">ТекстильДизайн</p><p class="text-muted text-[11px]">Ур. 15</p></div><span class="text-xp text-[12px] font-bold flex-shrink-0">3 210</span></div>
+            <div class="lb-row"><span class="text-muted font-bold text-sm w-5">8</span><div class="w-9 h-9 rounded-full bg-gradient-to-br from-accent to-yellow-500 flex items-center justify-center text-black text-[10px] font-bold flex-shrink-0">12</div><div class="flex-1 min-w-0"><p class="text-accent text-[13px] font-semibold">Вы (Алексей)</p><p class="text-muted text-[11px]">Ур. 12</p></div><span class="text-xp text-[12px] font-bold flex-shrink-0">2 340</span></div>
+        </div>
+
+        <div class="card border-yellow/20 p-4" style="background:rgb(var(--yellow)/.05)">
+            <div class="flex items-center gap-2 mb-1.5"><span>🎄</span><span class="text-yellow text-[11px] font-bold uppercase tracking-widest">Новогодний сезон</span></div>
+            <p class="text-subtle text-[12px]">×2 XP за все действия до 31 января</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ SUB: REFERRALS ═══════════ -->
+<div id="sp-ref" class="sub-page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center gap-3 mb-6">
+            <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="closeSub('ref')"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+            <h1 class="text-white text-xl font-bold">Рефералы</h1>
+        </div>
+        <div class="grid grid-cols-3 gap-2.5 mb-6">
+            <div class="card p-3.5 text-center"><p class="text-white text-xl font-black">3</p><p class="text-muted text-[11px]">Приглашено</p></div>
+            <div class="card p-3.5 text-center"><p class="text-accent text-xl font-black">35%</p><p class="text-muted text-[11px]">Скидка</p></div>
+            <div class="card p-3.5 text-center"><p class="text-green text-xl font-black">1 050₽</p><p class="text-muted text-[11px]">Экономия</p></div>
+        </div>
+        <div class="card p-5 mb-6 text-center">
+            <p class="text-muted text-[12px] mb-2">Ваш пригласительный код</p>
+            <p class="text-white text-3xl font-black tracking-[.15em] mb-4" id="icode">ALEX-7K2M</p>
+            <button class="btn-accent px-8 py-3 text-[13px]" onclick="cpCode()"><i data-lucide="copy" class="w-4 h-4 inline mr-1.5 -mt-0.5"></i>Скопировать</button>
+        </div>
+        <h3 class="text-white text-sm font-bold mb-3">Цели и бонусы</h3>
+        <div class="space-y-2.5 mb-6">
+            <div class="card p-4"><div class="flex items-center justify-between mb-2"><p class="text-fg text-[13px] font-semibold">Пригласи 3 друзей</p><span class="badge bg-green/10 text-green">✓</span></div><div class="pbar"><div class="pfill bg-green" style="width:100%"></div></div><p class="text-muted text-[11px] mt-1.5">Бонус: +500 XP</p></div>
+            <div class="card p-4"><div class="flex items-center justify-between mb-2"><p class="text-fg text-[13px] font-semibold">Пригласи 10 друзей</p><span class="text-muted text-[12px]">3/10</span></div><div class="pbar"><div class="pfill bg-accent" style="width:30%"></div></div><p class="text-muted text-[11px] mt-1.5">Бонус: PRO на 1 мес</p></div>
+            <div class="card p-4"><div class="flex items-center justify-between mb-2"><p class="text-fg text-[13px] font-semibold">Пригласи 25 друзей</p><span class="text-muted text-[12px]">3/25</span></div><div class="pbar"><div class="pfill bg-purple" style="width:12%"></div></div><p class="text-muted text-[11px] mt-1.5">Бонус: Business навсегда</p></div>
+        </div>
+        <h3 class="text-white text-sm font-bold mb-3">Приглашённые</h3>
+        <div class="space-y-2">
+            <div class="card p-4 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4 text-green"></i></div><div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">user_4821</p><p class="text-muted text-[11px]">PRO · 2 дня назад</p></div><span class="text-green text-[11px] font-bold flex-shrink-0">+35%</span></div>
+            <div class="card p-4 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="check" class="w-4 h-4 text-green"></i></div><div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">user_7293</p><p class="text-muted text-[11px]">Starter · 5 дней назад</p></div><span class="text-green text-[11px] font-bold flex-shrink-0">+35%</span></div>
+            <div class="card p-4 flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-yellow/10 flex items-center justify-center flex-shrink-0"><i data-lucide="clock" class="w-4 h-4 text-yellow"></i></div><div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">user_1056</p><p class="text-muted text-[11px]">Trial · ждёт оплату</p></div><span class="text-muted text-[11px] flex-shrink-0">Ожидание</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ SUB: ANALYTICS ═══════════ -->
+<div id="sp-anl" class="sub-page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center gap-3 mb-6">
+            <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="closeSub('anl')"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+            <h1 class="text-white text-xl font-bold">Аналитика</h1>
+        </div>
+        <div class="flex gap-2 mb-5"><button class="chip text-[11px] py-1.5 px-3">7 дней</button><button class="chip on text-[11px] py-1.5 px-3">30 дней</button><button class="chip text-[11px] py-1.5 px-3">90 дней</button></div>
+        <div class="grid grid-cols-2 gap-3 mb-5">
+            <div class="card p-4"><p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Ответов</p><p class="text-white text-2xl font-black">1 247</p><div class="flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3 text-green"></i><span class="text-green text-[11px] font-bold">+312</span></div></div>
+            <div class="card p-4"><p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Авто</p><p class="text-white text-2xl font-black">892</p><p class="text-muted text-[11px] mt-1">71.5%</p></div>
+            <div class="card p-4"><p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Ср. время</p><p class="text-white text-2xl font-black">2.1<span class="text-sm text-muted">с</span></p><div class="flex items-center gap-1 mt-1"><i data-lucide="trending-down" class="w-3 h-3 text-green"></i><span class="text-green text-[11px] font-bold">-0.4с</span></div></div>
+            <div class="card p-4"><p class="text-muted text-[10px] uppercase tracking-wider font-semibold mb-1">Уникальн.</p><p class="text-white text-2xl font-black">94<span class="text-sm text-muted">%</span></p><div class="flex items-center gap-1 mt-1"><i data-lucide="trending-up" class="w-3 h-3 text-green"></i><span class="text-green text-[11px] font-bold">+2%</span></div></div>
+        </div>
+
+        <div class="card p-4 mb-5">
+            <h3 class="text-fg text-[13px] font-bold mb-4">Тональность отзывов</h3>
+            <div class="flex items-end gap-4 h-28 mb-2">
+                <div class="flex-1 flex flex-col items-center gap-1"><span class="text-[11px] text-green font-bold">62%</span><div class="w-full rounded-t-md" style="height:62%;background:rgb(var(--green)/.25)"></div><span class="text-[10px] text-muted">Поз.</span></div>
+                <div class="flex-1 flex flex-col items-center gap-1"><span class="text-[11px] text-red font-bold">18%</span><div class="w-full rounded-t-md" style="height:18%;background:rgb(var(--red)/.25)"></div><span class="text-[10px] text-muted">Нег.</span></div>
+                <div class="flex-1 flex flex-col items-center gap-1"><span class="text-[11px] text-yellow font-bold">12%</span><div class="w-full rounded-t-md" style="height:12%;background:rgb(var(--yellow)/.25)"></div><span class="text-[10px] text-muted">Нейтр.</span></div>
+                <div class="flex-1 flex flex-col items-center gap-1"><span class="text-[11px] text-blue font-bold">8%</span><div class="w-full rounded-t-md" style="height:8%;background:rgb(var(--blue)/.25)"></div><span class="text-[10px] text-muted">Вопрос</span></div>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+            <h3 class="text-fg text-[13px] font-bold mb-4">Динамика рейтинга WB</h3>
+            <div class="flex items-end gap-[3px] h-20 mb-2">
+                <div class="flex-1 rounded-t" style="height:40%;background:rgb(var(--accent)/.15)"></div>
+                <div class="flex-1 rounded-t" style="height:45%;background:rgb(var(--accent)/.18)"></div>
+                <div class="flex-1 rounded-t" style="height:50%;background:rgb(var(--accent)/.2)"></div>
+                <div class="flex-1 rounded-t" style="height:48%;background:rgb(var(--accent)/.22)"></div>
+                <div class="flex-1 rounded-t" style="height:55%;background:rgb(var(--accent)/.25)"></div>
+                <div class="flex-1 rounded-t" style="height:60%;background:rgb(var(--accent)/.3)"></div>
+                <div class="flex-1 rounded-t" style="height:58%;background:rgb(var(--accent)/.32)"></div>
+                <div class="flex-1 rounded-t" style="height:65%;background:rgb(var(--accent)/.38)"></div>
+                <div class="flex-1 rounded-t" style="height:70%;background:rgb(var(--accent)/.42)"></div>
+                <div class="flex-1 rounded-t" style="height:68%;background:rgb(var(--accent)/.45)"></div>
+                <div class="flex-1 rounded-t" style="height:75%;background:rgb(var(--accent)/.5)"></div>
+                <div class="flex-1 rounded-t" style="height:80%;background:rgb(var(--accent)/.55)"></div>
+                <div class="flex-1 rounded-t" style="height:85%;background:rgb(var(--accent)/.6)"></div>
+                <div class="flex-1 rounded-t" style="height:82%;background:rgb(var(--accent)/.65)"></div>
+                <div class="flex-1 rounded-t" style="height:92%;background:rgb(var(--accent)/.8)"></div>
+            </div>
+            <div class="flex justify-between text-[10px] text-muted mb-2"><span>1 дек</span><span>15 дек</span><span>30 дек</span></div>
+            <p class="text-muted text-[11px] pt-2 border-t border-border">WB: 4.57 → 4.72 <span class="text-green font-bold">+0.15</span></p>
+        </div>
+
+        <div class="card p-4 mb-5">
+            <h3 class="text-fg text-[13px] font-bold mb-3">Топ жалоб</h3>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3"><span class="text-muted text-[11px] w-4">1.</span><p class="text-fg text-[13px] flex-1">Размер не совпал</p><div class="flex items-center gap-2"><div class="pbar w-16"><div class="pfill bg-red" style="width:34%"></div></div><span class="text-red text-[11px] font-bold">34%</span></div></div>
+                <div class="flex items-center gap-3"><span class="text-muted text-[11px] w-4">2.</span><p class="text-fg text-[13px] flex-1">Качество ткани</p><div class="flex items-center gap-2"><div class="pbar w-16"><div class="pfill bg-red" style="width:22%"></div></div><span class="text-red text-[11px] font-bold">22%</span></div></div>
+                <div class="flex items-center gap-3"><span class="text-muted text-[11px] w-4">3.</span><p class="text-fg text-[13px] flex-1">Запах при открытии</p><div class="flex items-center gap-2"><div class="pbar w-16"><div class="pfill bg-yellow" style="width:15%"></div></div><span class="text-yellow text-[11px] font-bold">15%</span></div></div>
+                <div class="flex items-center gap-3"><span class="text-muted text-[11px] w-4">4.</span><p class="text-fg text-[13px] flex-1">Доставка</p><div class="flex items-center gap-2"><div class="pbar w-16"><div class="pfill bg-yellow" style="width:12%"></div></div><span class="text-yellow text-[11px] font-bold">12%</span></div></div>
+                <div class="flex items-center gap-3"><span class="text-muted text-[11px] w-4">5.</span><p class="text-fg text-[13px] flex-1">Цвет отличается</p><div class="flex items-center gap-2"><div class="pbar w-16"><div class="pfill bg-green" style="width:8%"></div></div><span class="text-green text-[11px] font-bold">8%</span></div></div>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+            <h3 class="text-fg text-[13px] font-bold mb-3">По площадкам</h3>
+            <div class="grid grid-cols-2 gap-2.5">
+                <div class="bg-surface rounded-xl p-3.5 border border-border"><div class="flex items-center gap-2 mb-2"><span class="badge bg-purple/10 text-purple">WB</span></div><p class="text-white text-lg font-black">847</p><p class="text-muted text-[11px]">ответов · 4.72 ★</p></div>
+                <div class="bg-surface rounded-xl p-3.5 border border-border"><div class="flex items-center gap-2 mb-2"><span class="badge bg-sky/10 text-sky">Ozon</span></div><p class="text-white text-lg font-black">400</p><p class="text-muted text-[11px]">ответов · 4.85 ★</p></div>
+            </div>
+        </div>
+
+        <button class="btn-ghost w-full py-3.5 text-[13px] flex items-center justify-center gap-2"><i data-lucide="download" class="w-4 h-4"></i>Скачать отчёт (PDF)</button>
+    </div>
+</div>
+
+<!-- ═══════════ SUB: BATCH ═══════════ -->
+<div id="sp-batch" class="sub-page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center gap-3 mb-6">
+            <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="closeSub('batch')"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+            <h1 class="text-white text-xl font-bold">Пакетная обработка</h1>
+        </div>
+        <div class="card p-6 mb-5 text-center border-dashed border-2 border-border-lt cursor-pointer" onclick="toast('Выберите файл в Mini App')">
+            <i data-lucide="upload-cloud" class="w-10 h-10 mx-auto text-muted mb-3"></i>
+            <p class="text-fg text-[14px] font-semibold mb-1">Загрузите файл</p>
+            <p class="text-muted text-[12px]">.txt или .csv · до 50 отзывов</p>
+        </div>
+        <div class="card p-4 mb-5">
+            <h3 class="text-fg text-[13px] font-bold mb-2">Пример формата</h3>
+            <div class="bg-surface rounded-lg p-3 text-[11px] text-muted font-mono leading-relaxed border border-border">5★ Отличный товар, рекомендую!<br>2★ Размер не совпал<br>4★ Нормально, доставка долгая<br>1★ Брак, нитки торчат<br>? Есть ли размер XL?</div>
+        </div>
+        <div class="card p-4 mb-5 space-y-4">
+            <h3 class="text-fg text-[13px] font-bold">Настройки</h3>
+            <div><label class="text-subtle text-[11px] block mb-1.5">Тональность</label><select class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-fg text-[13px]"><option>😊 Дружелюбный</option><option>🏢 Официальный</option><option>💰 Продающий</option></select></div>
+            <div class="flex items-center justify-between"><div><p class="text-fg text-[13px] font-medium">Параллельная обработка</p><p class="text-muted text-[11px]">Несколько отзывов одновременно</p></div><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="flex items-center justify-between"><div><p class="text-fg text-[13px] font-medium">Авто-публикация</p><p class="text-muted text-[11px]">Без модерации</p></div><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <h3 class="text-white text-sm font-bold mb-3">История</h3>
+        <div class="space-y-2">
+            <div class="card p-4 flex items-center gap-3"><div class="w-9 h-9 rounded-lg bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="check-circle" class="w-4 h-4 text-green"></i></div><div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">batch_dec28.txt</p><p class="text-muted text-[11px]">35 отзывов · 2.1с среднее</p></div><span class="text-green text-[11px] font-bold">Готово</span></div>
+            <div class="card p-4 flex items-center gap-3"><div class="w-9 h-9 rounded-lg bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="check-circle" class="w-4 h-4 text-green"></i></div><div class="flex-1 min-w-0"><p class="text-fg text-[13px] font-medium">batch_dec25.csv</p><p class="text-muted text-[11px]">50 отзывов · 1.8с среднее</p></div><span class="text-green text-[11px] font-bold">Готово</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ SUB: NOTIFICATIONS ═══════════ -->
+<div id="sp-notif" class="sub-page">
+    <div class="px-5 pt-14 pb-6">
+        <div class="flex items-center gap-3 mb-6">
+            <button class="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center" onclick="closeSub('notif')"><i data-lucide="arrow-left" class="w-5 h-5 text-white"></i></button>
+            <h1 class="text-white text-xl font-bold">Уведомления</h1>
+        </div>
+        <div class="space-y-2.5">
+            <div class="card border-red/20 p-4 flex gap-3" style="background:rgb(var(--red)/.05)">
+                <div class="w-10 h-10 rounded-xl bg-red/10 flex items-center justify-center flex-shrink-0"><i data-lucide="alert-triangle" class="w-5 h-5 text-red"></i></div>
+                <div class="min-w-0"><p class="text-fg text-[13px] font-semibold mb-1">Отзыв 1★ на Ozon</p><p class="text-subtle text-[12px] leading-relaxed">«Товар не соответствует описанию, цвет другой, размер мелкий»</p><p class="text-muted text-[11px] mt-2">5 мин назад · Ожидает ответа</p><button class="btn-accent px-5 py-2 text-[11px] mt-2.5" onclick="closeSub('notif')">Ответить</button></div>
+            </div>
+            <div class="card border-red/20 p-4 flex gap-3" style="background:rgb(var(--red)/.05)">
+                <div class="w-10 h-10 rounded-xl bg-red/10 flex items-center justify-center flex-shrink-0"><i data-lucide="alert-triangle" class="w-5 h-5 text-red"></i></div>
+                <div class="min-w-0"><p class="text-fg text-[13px] font-semibold mb-1">Отзыв 2★ на WB</p><p class="text-subtle text-[12px] leading-relaxed">«Курьер не дозвонился, товар вернули»</p><p class="text-muted text-[11px] mt-2">32 мин назад</p><span class="badge bg-green/10 text-green">Авто-ответ отправлен</span></div>
+            </div>
+            <div class="card border-yellow/20 p-4 flex gap-3">
+                <div class="w-10 h-10 rounded-xl bg-yellow/10 flex items-center justify-center flex-shrink-0"><i data-lucide="clock" class="w-5 h-5 text-yellow"></i></div>
+                <div class="min-w-0"><p class="text-fg text-[13px] font-semibold mb-1">Trial заканчивается</p><p class="text-subtle text-[12px] leading-relaxed">Осталось 5 дней. Продлите для сохранения авто-мониторинга.</p><p class="text-muted text-[11px] mt-2">1 ч назад</p><button class="btn-ghost px-5 py-2 text-[11px] mt-2" onclick="closeSub('notif');openSub('sub')">Подробнее</button></div>
+            </div>
+            <div class="card p-4 flex gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center flex-shrink-0"><i data-lucide="trending-up" class="w-5 h-5 text-green"></i></div>
+                <div class="min-w-0"><p class="text-fg text-[13px] font-semibold mb-1">Рейтинг WB: 4.72!</p><p class="text-subtle text-[12px] leading-relaxed">+0.15 за 30 дней. Отличный результат!</p><p class="text-muted text-[11px] mt-2">3 ч назад</p></div>
+            </div>
+            <div class="card p-4 flex gap-3">
+                <div class="w-10 h-10 rounded-xl bg-xp/10 flex items-center justify-center flex-shrink-0"><i data-lucide="zap" class="w-5 h-5 text-xp"></i></div>
+                <div class="min-w-0"><p class="text-fg text-[13px] font-semibold mb-1">Новый уровень: 12!</p><p class="text-subtle text-[12px] leading-relaxed">Разблокирован значок 🎯 Снайпер.</p><p class="text-muted text-[11px] mt-2">Вчера</p></div>
+            </div>
+            <div class="card p-4 flex gap-3">
+                <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0"><i data-lucide="gift" class="w-5 h-5 text-accent"></i></div>
+                <div class="min-w-0"><p class="text-fg text-[13px] font-semibold mb-1">Друг оплатил PRO!</p><p class="text-subtle text-[12px] leading-relaxed">user_4821 оплатил PRO. Скидка 35% активна.</p><p class="text-muted text-[11px] mt-2">2 дня назад</p></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ BOTTOM NAV ═══════════ -->
+<nav class="bnav" id="bnav">
+    <div class="grid grid-cols-4 max-w-md mx-auto">
+        <button class="bnav-item on" onclick="switchTo('dash')"><i data-lucide="layout-dashboard" class="w-5 h-5 bnav-ico"></i><span class="bnav-lbl">Главная</span></button>
+        <button class="bnav-item" onclick="switchTo('revs')"><i data-lucide="message-square-text" class="w-5 h-5 bnav-ico"></i><span class="bnav-lbl">Отзывы</span></button>
+        <button class="bnav-item" onclick="switchTo('ai')"><i data-lucide="brain" class="w-5 h-5 bnav-ico"></i><span class="bnav-lbl">AI</span></button>
+        <button class="bnav-item" onclick="switchTo('prof')"><i data-lucide="user" class="w-5 h-5 bnav-ico"></i><span class="bnav-lbl">Профиль</span></button>
+    </div>
+</nav>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div id="toast" class="fixed top-14 left-4 right-4 z-[100] bg-card border border-green/30 rounded-xl px-5 py-3.5 flex items-center gap-2.5 transition-all duration-300 opacity-0 -translate-y-4 pointer-events-none">
+    <i data-lucide="check-circle" class="w-4 h-4 text-green flex-shrink-0"></i>
+    <span id="toast-t" class="text-white text-[13px] font-medium"></span>
+</div>
+
+<script>
+lucide.createIcons();
+
+const pages={dash:0,revs:1,ai:2,prof:3};
+const navBtns=document.querySelectorAll('.bnav-item');
+
+function switchTo(id){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('pg-'+id).classList.add('active');
+    navBtns.forEach((b,i)=>{b.classList.toggle('on',i===pages[id])});
+    document.querySelectorAll('.sub-page').forEach(s=>s.classList.remove('open'));
+    document.getElementById('bnav').style.display='';
+    window.scrollTo(0,0);
+}
+
+function openSub(id){
+    document.getElementById('sp-'+id).classList.add('open');
+    document.getElementById('bnav').style.display='none';
+    window.scrollTo(0,0);
+    lucide.createIcons();
+}
+
+function closeSub(id){
+    document.getElementById('sp-'+id).classList.remove('open');
+    document.getElementById('bnav').style.display='';
+}
+
+function chipSel(el){
+    el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+    el.classList.add('on');
+}
+
+function toast(msg){
+    const t=document.getElementById('toast'),tx=document.getElementById('toast-t');
+    tx.textContent=msg;
+    t.classList.remove('opacity-0','-translate-y-4','pointer-events-none');
+    t.classList.add('opacity-100','translate-y-0');
+    clearTimeout(t._tid);
+    t._tid=setTimeout(()=>{t.classList.add('opacity-0','-translate-y-4','pointer-events-none');t.classList.remove('opacity-100','translate-y-0')},2200);
+}
+
+function cpCode(){
+    const c=document.getElementById('icode').textContent;
+    if(navigator.clipboard)navigator.clipboard.writeText(c).then(()=>toast('Код скопирован: '+c));
+    else toast('Код: '+c);
+}
+</script>
 </body>
 </html>
