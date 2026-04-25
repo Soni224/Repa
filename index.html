@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика Отзывов</title>
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://tailwindcss.com"></script>
+    <script src="https://telegram.org"></script>
+</head>
+<body class="bg-gray-900 text-white p-4">
+    <div class="max-w-md mx-auto bg-gray-800 rounded-xl shadow-lg p-6">
+        <h1 class="text-xl font-bold mb-4 text-center">Аналитика WB/Ozon</h1>
+        <canvas id="myChart"></canvas>
+        <button onclick="window.Telegram.WebApp.close()" class="w-full mt-6 bg-blue-600 py-2 rounded-lg font-semibold">
+            Вернуться в чат
+        </button>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть на весь экран
+
+        // Получаем данные из URL (например: ?data=4.5,4.2,4.8,5.0)
+        const urlParams = new URLSearchParams(window.location.search);
+        const rawData = urlParams.get('data') || "0,0,0,0,0";
+        const chartData = rawData.split(',').map(Number);
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'],
+                datasets: [{
+                    label: 'Рейтинг товара',
+                    data: chartData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    fill: true,
+                    tension: 0.4, // Делает линию плавной
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                animation: {
+                    duration: 2000, // Анимация на 2 секунды
+                    easing: 'easeInOutQuart'
+                },
+                scales: {
+                    y: { min: 0, max: 5, grid: { color: '#374151' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
