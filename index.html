@@ -1,57 +1,1076 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Статистика Отзывов</title>
-    <script src="https://jsdelivr.net"></script>
-    <script src="https://tailwindcss.com"></script>
-    <script src="https://telegram.org"></script>
+    <title>РЕПА — Автоответы на отзывы WB и Ozon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bg: '#050505',
+                        surface: '#0A0A0A',
+                        card: '#111111',
+                        border: '#1E1E1E',
+                        muted: '#666666',
+                        subtle: '#999999',
+                        fg: '#E8E8E8',
+                        white: '#FFFFFF',
+                        accent: '#FF6A00',
+                        'accent-dim': '#CC5500',
+                        silver: '#C0C0C0',
+                        'silver-dark': '#8A8A8A',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #050505; color: #E8E8E8; -webkit-font-smoothing: antialiased; }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(1.05); }
+        }
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slide-in-left {
+            from { opacity: 0; transform: translateX(-40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes count-up {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .animate-slide-up { animation: slide-up 0.7s ease-out forwards; }
+        .animate-slide-up-delay { animation: slide-up 0.7s ease-out 0.15s forwards; opacity: 0; }
+        .animate-slide-up-delay-2 { animation: slide-up 0.7s ease-out 0.3s forwards; opacity: 0; }
+        .animate-slide-in-left { animation: slide-in-left 0.6s ease-out forwards; }
+        .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            animation: pulse-glow 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .ticker-track {
+            display: flex;
+            animation: ticker 30s linear infinite;
+            width: max-content;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+            border: 1px solid #1E1E1E;
+        }
+        .card-hover:hover {
+            border-color: #FF6A00;
+            background: #151515 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(255, 106, 0, 0.08);
+        }
+
+        .btn-primary {
+            background: #FF6A00;
+            color: #000;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary:hover {
+            background: #FF8533;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(255, 106, 0, 0.3);
+        }
+        .btn-primary:active { transform: scale(0.97); }
+
+        .btn-outline {
+            border: 1px solid #333;
+            color: #E8E8E8;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-outline:hover {
+            border-color: #FF6A00;
+            color: #FF6A00;
+            background: rgba(255, 106, 0, 0.05);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #FF6A00, #FF9955);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease-out; }
+        .section-reveal.visible { opacity: 1; transform: translateY(0); }
+
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 9999;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        }
+
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 0.8s infinite;
+            color: #FF6A00;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FF6A00; }
+
+        .stat-number { font-variant-numeric: tabular-nums; }
+
+        .grid-pattern {
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .review-bubble {
+            position: relative;
+            padding: 16px 20px;
+            background: #151515;
+            border: 1px solid #1E1E1E;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .review-bubble::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 20px;
+            width: 12px;
+            height: 12px;
+            background: #151515;
+            border-left: 1px solid #1E1E1E;
+            border-top: 1px solid #1E1E1E;
+            transform: rotate(45deg);
+        }
+        .review-bubble.reply {
+            border-color: rgba(255,106,0,0.2);
+            background: rgba(255,106,0,0.04);
+        }
+        .review-bubble.reply::before {
+            background: rgba(255,106,0,0.04);
+            border-color: rgba(255,106,0,0.2);
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .tab-btn.active {
+            background: #FF6A00;
+            color: #000;
+            font-weight: 700;
+            border-color: #FF6A00;
+        }
+        .tab-btn:not(.active):hover {
+            border-color: #333;
+            background: #111;
+        }
+
+        .faq-item { border: 1px solid #1E1E1E; transition: all 0.2s ease; }
+        .faq-item:hover { border-color: #333; }
+        .faq-item.open { border-color: rgba(255,106,0,0.3); }
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; }
+        .faq-item.open .faq-answer { max-height: 300px; }
+        .faq-chevron { transition: transform 0.3s ease; }
+        .faq-item.open .faq-chevron { transform: rotate(180deg); }
+
+        .marquee-mask {
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-white p-4">
-    <div class="max-w-md mx-auto bg-gray-800 rounded-xl shadow-lg p-6">
-        <h1 class="text-xl font-bold mb-4 text-center">Аналитика WB/Ozon</h1>
-        <canvas id="myChart"></canvas>
-        <button onclick="window.Telegram.WebApp.close()" class="w-full mt-6 bg-blue-600 py-2 rounded-lg font-semibold">
-            Вернуться в чат
-        </button>
+<body class="overflow-x-hidden">
+    <div class="noise-overlay"></div>
+
+    <!-- NAVIGATION -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-bg/90 backdrop-blur-xl border-b border-border">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center">
+                    <span class="text-black font-black text-sm">Р</span>
+                </div>
+                <span class="text-white font-bold text-lg tracking-tight">РЕПА</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#features" class="text-subtle text-sm hover:text-white transition-colors">Функции</a>
+                <a href="#how" class="text-subtle text-sm hover:text-white transition-colors">Как работает</a>
+                <a href="#cases" class="text-subtle text-sm hover:text-white transition-colors">Кейсы</a>
+                <a href="#pricing" class="text-subtle text-sm hover:text-white transition-colors">Тарифы</a>
+                <a href="#faq" class="text-subtle text-sm hover:text-white transition-colors">FAQ</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="https://t.me/repa_bot" target="_blank" class="btn-primary px-5 py-2.5 rounded-lg text-sm inline-flex items-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    Запустить бот
+                </a>
+                <button id="mobile-menu-btn" class="md:hidden text-white p-2">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-surface border-t border-border px-6 py-4 space-y-3">
+            <a href="#features" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Функции</a>
+            <a href="#how" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Как работает</a>
+            <a href="#cases" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Кейсы</a>
+            <a href="#pricing" class="block text-subtle text-sm py-2 hover:text-white transition-colors">Тарифы</a>
+            <a href="#faq" class="block text-subtle text-sm py-2 hover:text-white transition-colors">FAQ</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="relative min-h-screen flex items-center pt-16 grid-pattern overflow-hidden">
+        <div class="glow-orb w-[600px] h-[600px] bg-accent top-[-200px] right-[-200px]"></div>
+        <div class="glow-orb w-[400px] h-[400px] bg-accent bottom-[-100px] left-[-150px]" style="animation-delay: -3s;"></div>
+
+        <div class="max-w-7xl mx-auto px-6 py-20 w-full relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                <!-- Left: Text -->
+                <div class="space-y-7">
+                    <div class="animate-slide-up flex items-center gap-2 bg-card border border-border rounded-full px-4 py-1.5 w-fit">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-xs text-subtle font-medium">2,847 селлеров онлайн</span>
+                    </div>
+
+                    <h1 class="animate-slide-up-delay text-4xl sm:text-5xl lg:text-6xl font-black leading-[0.95] tracking-tight text-white">
+                        ОТВЕЧАЙ НА<br>
+                        <span class="text-gradient">ОТЗЫВЫ</span><br>
+                        ЗА 3 СЕКУНДЫ
+                    </h1>
+
+                    <p class="animate-slide-up-delay-2 text-subtle text-base lg:text-lg leading-relaxed max-w-md">
+                        ИИ-бот для автоматических ответов на отзывы Wildberries и Ozon. Увеличь рейтинг на 15% за первый месяц.
+                    </p>
+
+                    <div class="animate-slide-up-delay-2 flex flex-col sm:flex-row gap-3 pt-2">
+                        <a href="https://t.me/repa_bot" target="_blank" class="btn-primary px-7 py-3.5 rounded-xl text-sm inline-flex items-center justify-center gap-2.5">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            Подключить бесплатно
+                        </a>
+                        <a href="#how" class="btn-outline px-7 py-3.5 rounded-xl text-sm inline-flex items-center justify-center gap-2.5">
+                            Как это работает
+                            <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+
+                    <div class="animate-slide-up-delay-2 flex items-center gap-6 pt-4">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-red-600 border-2 border-bg flex items-center justify-center text-[10px] text-white font-bold">АК</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 border-2 border-bg flex items-center justify-center text-[10px] text-white font-bold">МВ</div>
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-teal-600 border-2 border-bg flex items-center justify-center text-[10px] text-white font-bold">ОС</div>
+                            <div class="w-8 h-8 rounded-full bg-card border-2 border-bg flex items-center justify-center text-[10px] text-subtle font-medium">+2K</div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>
+                            </div>
+                            <span class="text-xs text-muted mt-0.5 block">4.9/5 на 320+ отзывах</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Live Demo -->
+                <div class="relative animate-slide-up-delay">
+                    <div class="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-2xl shadow-black/50">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+                                    <i data-lucide="message-square-text" class="w-5 h-5 text-accent"></i>
+                                </div>
+                                <div>
+                                    <div class="text-white text-sm font-semibold">Новый отзыв</div>
+                                    <div class="text-muted text-xs">Wildberries · 2 сек назад</div>
+                                </div>
+                            </div>
+                            <span class="text-[10px] uppercase tracking-widest text-accent font-bold bg-accent/10 px-2 py-1 rounded">Авто</span>
+                        </div>
+
+                        <!-- Review -->
+                        <div class="space-y-3">
+                            <div class="review-bubble">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="flex gap-0.5">
+                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 fill-yellow-500"></i>
+                                        <i data-lucide="star" class="w-3 h-3 text-yellow-500 fill-yellow-500"></i>
+                                        <i data-lucide="star" class="w-3 h-3 text-muted"></i>
+                                        <i data-lucide="star" class="w-3 h-3 text-muted"></i>
+                                        <i data-lucide="star" class="w-3 h-3 text-muted"></i>
+                                    </div>
+                                    <span class="text-muted text-xs">Анна К.</span>
+                                </div>
+                                <p class="text-fg">Качество ткани хорошее, но размер не совпал. Заказывала M, пришёл как S. Буду возвращать.</p>
+                            </div>
+
+                            <!-- AI Reply -->
+                            <div class="review-bubble reply" id="ai-reply">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="w-5 h-5 rounded bg-accent flex items-center justify-center">
+                                        <span class="text-black text-[9px] font-black">Р</span>
+                                    </div>
+                                    <span class="text-accent text-xs font-semibold">РЕПА · Ответ</span>
+                                </div>
+                                <p class="text-fg/90" id="reply-text">Анна, здравствуйте! Благодарим за обратную связь. Приносим извинения за несоответствие размера — мы уже передали информацию на производство. Оформите возврат через личный кабинет, деньги вернутся в течение 3 дней. В качестве компенсации предлагаем скидку 15% на следующий заказ (промокод: SORRY15). Будем рады видеть вас снова!</p>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="flex items-center justify-between pt-2 border-t border-border">
+                            <div class="flex items-center gap-4">
+                                <button class="flex items-center gap-1.5 text-muted hover:text-green-400 transition-colors text-xs" onclick="showToast('Ответ опубликован ✓')">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                    Опубликовать
+                                </button>
+                                <button class="flex items-center gap-1.5 text-muted hover:text-white transition-colors text-xs">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                    Редактировать
+                                </button>
+                            </div>
+                            <span class="text-muted text-xs flex items-center gap-1">
+                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                2.3 сек
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Floating badge -->
+                    <div class="absolute -bottom-4 -left-4 bg-surface border border-border rounded-xl px-4 py-3 shadow-lg animate-float">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                <i data-lucide="trending-up" class="w-4 h-4 text-green-400"></i>
+                            </div>
+                            <div>
+                                <div class="text-white text-sm font-bold">+18%</div>
+                                <div class="text-muted text-[10px]">Рейтинг за 30 дней</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating badge 2 -->
+                    <div class="absolute -top-3 -right-3 bg-surface border border-border rounded-xl px-4 py-3 shadow-lg animate-float" style="animation-delay: -2s;">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                                <i data-lucide="bot" class="w-4 h-4 text-accent"></i>
+                            </div>
+                            <div>
+                                <div class="text-white text-sm font-bold">14.2M</div>
+                                <div class="text-muted text-[10px]">Ответов отправлено</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TICKER BAR -->
+    <div class="border-y border-border bg-surface py-4 marquee-mask overflow-hidden">
+        <div class="ticker-track">
+            <div class="flex items-center gap-12 px-6">
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Wildberries</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Ozon</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> GPT-4o</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Анализ тональности</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Шаблоны ответов</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Мультиаккаунт</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Аналитика</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> API</span>
+            </div>
+            <div class="flex items-center gap-12 px-6">
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Wildberries</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Ozon</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> GPT-4o</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Анализ тональности</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Шаблоны ответов</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Мультиаккаунт</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> Аналитика</span>
+                <span class="text-muted text-xs uppercase tracking-widest whitespace-nowrap flex items-center gap-2"><i data-lucide="check" class="w-3 h-3 text-accent"></i> API</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS SECTION -->
+    <section class="py-16 border-b border-border">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 section-reveal">
+                <div class="text-center lg:text-left">
+                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">14.2M</div>
+                    <div class="text-muted text-sm mt-1">Ответов отправлено</div>
+                </div>
+                <div class="text-center lg:text-left">
+                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">2.3<span class="text-accent">с</span></div>
+                    <div class="text-muted text-sm mt-1">Среднее время ответа</div>
+                </div>
+                <div class="text-center lg:text-left">
+                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">+18%</div>
+                    <div class="text-muted text-sm mt-1">Рост рейтинга</div>
+                </div>
+                <div class="text-center lg:text-left">
+                    <div class="text-3xl lg:text-4xl font-black text-white stat-number">2,847</div>
+                    <div class="text-muted text-sm mt-1">Активных селлеров</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section id="features" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="section-reveal mb-16">
+                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Функции</span>
+                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ВСЁ ДЛЯ УПРАВЛЕНИЯ<br>ОТЗЫВАМИ В ОДНОМ БОТЕ</h2>
+                <p class="text-subtle mt-4 max-w-lg text-sm leading-relaxed">Репа анализирует каждый отзыв, определяет тональность и генерирует персональный ответ за секунды.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 section-reveal">
+                <!-- Feature 1 -->
+                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                        <i data-lucide="brain" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <h3 class="text-white font-bold text-base">ИИ-анализ тональности</h3>
+                    <p class="text-subtle text-sm leading-relaxed">GPT-4o определяет позитив, негатив или нейтральность отзыва и подбирает стратегию ответа автоматически.</p>
+                    <div class="flex gap-2 pt-1">
+                        <span class="text-[10px] bg-green-500/10 text-green-400 px-2 py-0.5 rounded font-medium">Позитив</span>
+                        <span class="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded font-medium">Негатив</span>
+                        <span class="text-[10px] bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded font-medium">Нейтральный</span>
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <h3 class="text-white font-bold text-base">Умные шаблоны</h3>
+                    <p class="text-subtle text-sm leading-relaxed">Создай свои шаблоны с переменными: {имя}, {товар}, {проблема}. Бот подставит данные из отзыва.</p>
+                    <div class="bg-surface border border-border rounded-lg p-3 text-xs text-muted font-mono">
+                        Здравствуйте, {имя}! По поводу {проблема}...
+                    </div>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <h3 class="text-white font-bold text-base">Модерация ответов</h3>
+                    <p class="text-subtle text-sm leading-relaxed">Выбирай режим: полная автоматика, полуавтомат (одобрение) или ручной. Контролируй каждый ответ.</p>
+                    <div class="flex items-center gap-3 text-xs text-muted">
+                        <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3 text-accent"></i> Авто</span>
+                        <span class="flex items-center gap-1"><i data-lucide="eye" class="w-3 h-3 text-yellow-400"></i> Полуавто</span>
+                        <span class="flex items-center gap-1"><i data-lucide="hand" class="w-3 h-3 text-blue-400"></i> Ручной</span>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                        <i data-lucide="users" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <h3 class="text-white font-bold text-base">Мультиаккаунт</h3>
+                    <p class="text-subtle text-sm leading-relaxed">Подключи до 50 магазинов с одного бота. Управляй всеми отзывами из единого интерфейса.</p>
+                    <div class="flex -space-x-1">
+                        <div class="w-6 h-6 rounded bg-purple-500/30 border border-bg flex items-center justify-center text-[8px] text-purple-300">WB1</div>
+                        <div class="w-6 h-6 rounded bg-blue-500/30 border border-bg flex items-center justify-center text-[8px] text-blue-300">WB2</div>
+                        <div class="w-6 h-6 rounded bg-sky-500/30 border border-bg flex items-center justify-center text-[8px] text-sky-300">OZ1</div>
+                        <div class="w-6 h-6 rounded bg-card border border-bg flex items-center justify-center text-[8px] text-muted">+47</div>
+                    </div>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                        <i data-lucide="bar-chart-3" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <h3 class="text-white font-bold text-base">Аналитика отзывов</h3>
+                    <p class="text-subtle text-sm leading-relaxed">Графики тональности, топ проблем, динамика рейтинга. Понимай, что болит у клиентов.</p>
+                    <div class="flex items-end gap-1 h-8">
+                        <div class="w-2 bg-green-500/40 rounded-t" style="height:60%"></div>
+                        <div class="w-2 bg-green-500/40 rounded-t" style="height:80%"></div>
+                        <div class="w-2 bg-red-500/40 rounded-t" style="height:40%"></div>
+                        <div class="w-2 bg-green-500/40 rounded-t" style="height:90%"></div>
+                        <div class="w-2 bg-yellow-500/40 rounded-t" style="height:50%"></div>
+                        <div class="w-2 bg-green-500/40 rounded-t" style="height:100%"></div>
+                        <div class="w-2 bg-green-500/40 rounded-t" style="height:75%"></div>
+                    </div>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="card-hover bg-card rounded-2xl p-6 space-y-4">
+                    <div class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-accent"></i>
+                    </div>
+                    <h3 class="text-white font-bold text-base">Алерты на 1★ и 2★</h3>
+                    <p class="text-subtle text-sm leading-relaxed">Мгновенные уведомления в Telegram при негативных отзывах. Реагируй первым, пока клиент не ушел.</p>
+                    <div class="bg-red-500/5 border border-red-500/20 rounded-lg p-2.5 text-xs text-red-400 flex items-center gap-2">
+                        <i data-lucide="bell-ring" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                        ⚠️ Новый отзыв 1★ — «Курьер не дозвонился...»
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how" class="py-24 bg-surface border-y border-border relative">
+        <div class="glow-orb w-[500px] h-[500px] bg-accent top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="opacity:0.08;"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="section-reveal mb-16 text-center">
+                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Процесс</span>
+                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ЗАПУСК ЗА 3 МИНУТЫ</h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6 lg:gap-8 section-reveal">
+                <div class="relative">
+                    <div class="bg-card border border-border rounded-2xl p-7 space-y-5 h-full">
+                        <div class="text-5xl font-black text-accent/20">01</div>
+                        <h3 class="text-white font-bold text-lg">Подключи API</h3>
+                        <p class="text-subtle text-sm leading-relaxed">Вставь API-ключ от Wildberries и/или Ozon в бота. Ключи хранятся зашифрованными на серверах Telegram.</p>
+                        <div class="bg-surface rounded-lg p-3 text-xs font-mono text-muted">
+                            /api wb_abc123...<br>
+                            /api oz_xyz789...
+                        </div>
+                    </div>
+                    <div class="hidden md:block absolute top-1/2 -right-4 translate-x-1/2 z-20">
+                        <i data-lucide="chevron-right" class="w-6 h-6 text-accent/40"></i>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div class="bg-card border border-border rounded-2xl p-7 space-y-5 h-full">
+                        <div class="text-5xl font-black text-accent/20">02</div>
+                        <h3 class="text-white font-bold text-lg">Настрой промпт</h3>
+                        <p class="text-subtle text-sm leading-relaxed">Задай тон общения, ключевые преимущества бренда, контактные данные. Бот будет использовать это в каждом ответе.</p>
+                        <div class="bg-surface rounded-lg p-3 text-xs text-muted">
+                            Тон: дружелюбный, профессиональный<br>
+                            Бренд: «ТекстильПро»<br>
+                            Скидка при жалобе: 10%
+                        </div>
+                    </div>
+                    <div class="hidden md:block absolute top-1/2 -right-4 translate-x-1/2 z-20">
+                        <i data-lucide="chevron-right" class="w-6 h-6 text-accent/40"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="bg-card border border-accent/30 rounded-2xl p-7 space-y-5 h-full relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                        <div class="text-5xl font-black text-accent/40 relative">03</div>
+                        <h3 class="text-white font-bold text-lg relative">Получай ответы</h3>
+                        <p class="text-subtle text-sm leading-relaxed relative">Бот мониторит отзывы 24/7 и мгновенно отвечает. Ты видишь лог в боте и можешь всё контролировать.</p>
+                        <div class="bg-accent/5 border border-accent/20 rounded-lg p-3 text-xs text-accent flex items-center gap-2 relative">
+                            <i data-lucide="check-circle" class="w-4 h-4 flex-shrink-0"></i>
+                            Бот активен. Обработано 47 отзывов сегодня.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CASES / TRANSFORMATION -->
+    <section id="cases" class="py-24">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="section-reveal mb-16">
+                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Кейсы</span>
+                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">РЕАЛЬНЫЕ РЕЗУЛЬТАТЫ СЕЛЛЕРОВ</h2>
+            </div>
+
+            <!-- Tab switcher -->
+            <div class="flex gap-2 mb-8 section-reveal flex-wrap">
+                <button class="tab-btn active px-5 py-2.5 rounded-lg text-sm" onclick="switchCase('wb')">Wildberries</button>
+                <button class="tab-btn px-5 py-2.5 rounded-lg text-sm text-subtle" onclick="switchCase('ozon')">Ozon</button>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 section-reveal">
+                <!-- Case 1 -->
+                <div class="bg-card border border-border rounded-2xl p-6 space-y-5 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white text-xs font-bold">ТД</div>
+                            <div>
+                                <div class="text-white text-sm font-semibold">ТекстильДизайн</div>
+                                <div class="text-muted text-xs">Одежда · 12K товаров</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold" id="case-platform-1">WB</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-muted text-xs mb-1">Рейтинг</div>
+                            <div class="text-white font-bold">4.2 → <span class="text-green-400">4.7</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Время ответа</div>
+                            <div class="text-white font-bold">4ч → <span class="text-accent">2с</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Ответов/мес</div>
+                            <div class="text-white font-bold"><span class="text-accent">3,240</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Конверсия</div>
+                            <div class="text-white font-bold">+<span class="text-green-400">23%</span></div>
+                        </div>
+                    </div>
+                    <div class="border-t border-border pt-4">
+                        <p class="text-subtle text-xs leading-relaxed">«Репа повысила наш рейтинг с 4.2 до 4.7 за 6 недель. Негативные отзывы теперь обрабатываются моментально — клиенты часто меняют оценку.»</p>
+                    </div>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="bg-card border border-border rounded-2xl p-6 space-y-5 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">ЗТ</div>
+                            <div>
+                                <div class="text-white text-sm font-semibold">ЗооТовары24</div>
+                                <div class="text-muted text-xs">Товары для животных · 3K</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold" id="case-platform-2">WB</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-muted text-xs mb-1">Рейтинг</div>
+                            <div class="text-white font-bold">4.5 → <span class="text-green-400">4.9</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Возвраты</div>
+                            <div class="text-white font-bold">-<span class="text-green-400">31%</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Ответов/мес</div>
+                            <div class="text-white font-bold"><span class="text-accent">1,890</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Довольных</div>
+                            <div class="text-white font-bold">+<span class="text-green-400">47%</span></div>
+                        </div>
+                    </div>
+                    <div class="border-t border-border pt-4">
+                        <p class="text-subtle text-xs leading-relaxed">«Раньше мы не успевали отвечать на 60% отзывов. Теперь ответ на каждый — за 2 секунды. Возвраты снизились на треть.»</p>
+                    </div>
+                </div>
+
+                <!-- Case 3 -->
+                <div class="bg-card border border-border rounded-2xl p-6 space-y-5 card-hover">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">ЭЛ</div>
+                            <div>
+                                <div class="text-white text-sm font-semibold">Электроника Плюс</div>
+                                <div class="text-muted text-xs">Электроника · 8K товаров</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold" id="case-platform-3">WB</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-muted text-xs mb-1">Рейтинг</div>
+                            <div class="text-white font-bold">3.8 → <span class="text-green-400">4.5</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Позиции в поиске</div>
+                            <div class="text-white font-bold">+<span class="text-green-400">12 позиций</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Ответов/мес</div>
+                            <div class="text-white font-bold"><span class="text-accent">5,670</span></div>
+                        </div>
+                        <div>
+                            <div class="text-muted text-xs mb-1">Выручка</div>
+                            <div class="text-white font-bold">+<span class="text-green-400">34%</span></div>
+                        </div>
+                    </div>
+                    <div class="border-t border-border pt-4">
+                        <p class="text-subtle text-xs leading-relaxed">«С ростом рейтинга выросли позиции в поиске. Выручка увеличилась на 34%. Репа — лучший инструмент для селлера.»</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRICING -->
+    <section id="pricing" class="py-24 bg-surface border-y border-border">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="section-reveal mb-16 text-center">
+                <span class="text-accent text-xs uppercase tracking-widest font-semibold">Тарифы</span>
+                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ВЫБЕРИ СВОЙ ПЛАН</h2>
+                <p class="text-subtle mt-4 max-w-md mx-auto text-sm">7 дней бесплатно на любом тарифе. Без привязки карты.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-5 section-reveal">
+                <!-- Starter -->
+                <div class="bg-card border border-border rounded-2xl p-7 space-y-6 card-hover flex flex-col">
+                    <div>
+                        <h3 class="text-white font-bold text-lg">Старт</h3>
+                        <p class="text-muted text-xs mt-1">Для небольших магазинов</p>
+                    </div>
+                    <div>
+                        <span class="text-4xl font-black text-white">990₽</span>
+                        <span class="text-muted text-sm">/мес</span>
+                    </div>
+                    <ul class="space-y-3 text-sm text-subtle flex-1">
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>1 магазин</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 500 ответов/мес</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>GPT-4o мини</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>5 шаблонов</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Уведомления о негативе</li>
+                        <li class="flex items-start gap-2.5 text-muted"><i data-lucide="x" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>Аналитика</li>
+                        <li class="flex items-start gap-2.5 text-muted"><i data-lucide="x" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>API</li>
+                    </ul>
+                    <a href="https://t.me/repa_bot" target="_blank" class="btn-outline w-full py-3 rounded-xl text-sm text-center block">Начать бесплатно</a>
+                </div>
+
+                <!-- Pro -->
+                <div class="bg-card border-2 border-accent rounded-2xl p-7 space-y-6 relative overflow-hidden flex flex-col">
+                    <div class="absolute top-0 right-0 bg-accent text-black text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-lg">Популярный</div>
+                    <div>
+                        <h3 class="text-white font-bold text-lg">Про</h3>
+                        <p class="text-muted text-xs mt-1">Для растущего бизнеса</p>
+                    </div>
+                    <div>
+                        <span class="text-4xl font-black text-gradient">2,490₽</span>
+                        <span class="text-muted text-sm">/мес</span>
+                    </div>
+                    <ul class="space-y-3 text-sm text-subtle flex-1">
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 5 магазинов</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 5,000 ответов/мес</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>GPT-4o полный</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Безлимит шаблонов</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Аналитика отзывов</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Полуавтомат режим</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Приоритетная поддержка</li>
+                    </ul>
+                    <a href="https://t.me/repa_bot" target="_blank" class="btn-primary w-full py-3 rounded-xl text-sm text-center block">Начать бесплатно</a>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="bg-card border border-border rounded-2xl p-7 space-y-6 card-hover flex flex-col">
+                    <div>
+                        <h3 class="text-white font-bold text-lg">Бизнес</h3>
+                        <p class="text-muted text-xs mt-1">Для крупных селлеров</p>
+                    </div>
+                    <div>
+                        <span class="text-4xl font-black text-white">5,990₽</span>
+                        <span class="text-muted text-sm">/мес</span>
+                    </div>
+                    <ul class="space-y-3 text-sm text-subtle flex-1">
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>До 50 магазинов</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Безлимит ответов</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>GPT-4o + кастомная модель</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Полная аналитика</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>API доступ</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Webhook интеграции</li>
+                        <li class="flex items-start gap-2.5"><i data-lucide="check" class="w-4 h-4 text-accent flex-shrink-0 mt-0.5"></i>Персональный менеджер</li>
+                    </ul>
+                    <a href="https://t.me/repa_bot" target="_blank" class="btn-outline w-full py-3 rounded-xl text-sm text-center block">Связаться</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-24">
+        <div class="max-w-3xl mx-auto px-6">
+            <div class="section-reveal mb-16 text-center">
+                <span class="text-accent text-xs uppercase tracking-widest font-semibold">FAQ</span>
+                <h2 class="text-3xl lg:text-4xl font-black text-white mt-3 tracking-tight">ЧАСТЫЕ ВОПРОСЫ</h2>
+            </div>
+
+            <div class="space-y-3 section-reveal">
+                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
+                    <div class="flex items-center justify-between p-5">
+                        <span class="text-white text-sm font-semibold pr-4">Бот может удалить отрицательный отзыв?</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
+                    </div>
+                    <div class="faq-answer px-5">
+                        <p class="text-subtle text-sm leading-relaxed pb-5">Нет, удалить отзыв невозможно — это нарушение политики площадок. Но быстрый и вежливый ответ часто мотивирует покупателя изменить оценку на более высокую или дополнить отзыв. По нашей статистике, 34% покупателей повышают оценку после получения ответа.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
+                    <div class="flex items-center justify-between p-5">
+                        <span class="text-white text-sm font-semibold pr-4">Насколько ответы выглядят естественно, а не как от бота?</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
+                    </div>
+                    <div class="faq-answer px-5">
+                        <p class="text-subtle text-sm leading-relaxed pb-5">Мы используем GPT-4o с тонкой настройкой под e-commerce. Ответы содержат контекст отзыва, не используют шаблонные фразы и адаптируются под тональность. В A/B тестах 89% покупателей не отличили ответ бота от человеческого.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
+                    <div class="flex items-center justify-between p-5">
+                        <span class="text-white text-sm font-semibold pr-4">Безопасно ли передавать API-ключи боту?</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
+                    </div>
+                    <div class="faq-answer px-5">
+                        <p class="text-subtle text-sm leading-relaxed pb-5">Да. Ключи хранятся в зашифрованном виде на серверах Telegram (BotFather infrastructure). Мы не имеем доступа к ключам в открытом виде. Бот использует их только для чтения отзывов и отправки ответов через официальные API маркетплейсов.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
+                    <div class="flex items-center justify-between p-5">
+                        <span class="text-white text-sm font-semibold pr-4">Что если бот напишет что-то неуместное?</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
+                    </div>
+                    <div class="faq-answer px-5">
+                        <p class="text-subtle text-sm leading-relaxed pb-5">Используй полуавтоматический режим — бот подготовит ответ, а ты одобришь его перед отправкой. Также есть фильтр prohibited-контента и blacklist слов. За 14M+ ответов не было ни одного инцидента.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
+                    <div class="flex items-center justify-between p-5">
+                        <span class="text-white text-sm font-semibold pr-4">Работает ли с новыми отзывами или только с существующими?</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
+                    </div>
+                    <div class="faq-answer px-5">
+                        <p class="text-subtle text-sm leading-relaxed pb-5">Бот мониторит новые отзывы в реальном времени (раз в 30-60 секунд). Также есть команда для массовой обработки старых безответных отзывов — полезно при первом подключении.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item bg-card rounded-xl overflow-hidden cursor-pointer" onclick="toggleFaq(this)">
+                    <div class="flex items-center justify-between p-5">
+                        <span class="text-white text-sm font-semibold pr-4">Можно ли отменить подписку в любой момент?</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-muted faq-chevron flex-shrink-0"></i>
+                    </div>
+                    <div class="faq-answer px-5">
+                        <p class="text-subtle text-sm leading-relaxed pb-5">Да, отмена в один клик прямо в боте. Без скрытых условий, без удержания средств. После отмены бот перестанет отвечать на новые отзывы, но все настройки сохранятся на случай возвращения.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="py-24 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-accent/5 via-accent/10 to-transparent"></div>
+        <div class="glow-orb w-[800px] h-[400px] bg-accent bottom-0 left-1/2 -translate-x-1/2" style="opacity:0.1;"></div>
+        <div class="max-w-3xl mx-auto px-6 text-center relative z-10 section-reveal">
+            <div class="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-4 py-1.5 mb-6">
+                <i data-lucide="rocket" class="w-3.5 h-3.5 text-accent"></i>
+                <span class="text-xs text-accent font-semibold">7 дней бесплатно</span>
+            </div>
+            <h2 class="text-3xl lg:text-5xl font-black text-white tracking-tight leading-tight">ПОКАЖИ КЛИЕНТАМ,<br>ЧТО ТЫ СЛЫШИШЬ<br>ИХ <span class="text-gradient">КАЖДЫЙ ОТЗЫВ</span></h2>
+            <p class="text-subtle mt-6 max-w-md mx-auto text-sm leading-relaxed">Подключи Репу за 3 минуты и начни отвечать на отзывы автоматически. Пока твои конкуренты спят — ты растёшь.</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center mt-10">
+                <a href="https://t.me/repa_bot" target="_blank" class="btn-primary px-8 py-4 rounded-xl text-sm inline-flex items-center justify-center gap-2.5">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    Запустить бота в Telegram
+                </a>
+            </div>
+            <p class="text-muted text-xs mt-4">Без карты · Настройка за 3 минуты · Отмена в 1 клик</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-border bg-surface py-12">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-8 mb-10">
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-9 h-9 bg-accent rounded-lg flex items-center justify-center">
+                            <span class="text-black font-black text-sm">Р</span>
+                        </div>
+                        <span class="text-white font-bold text-lg tracking-tight">РЕПА</span>
+                    </div>
+                    <p class="text-muted text-sm leading-relaxed max-w-sm">ИИ-бот для автоматических ответов на отзывы Wildberries и Ozon. Повышай рейтинг и лояльность клиентов на автопилоте.</p>
+                    <div class="flex gap-3 mt-5">
+                        <a href="https://t.me/repa_bot" target="_blank" class="w-9 h-9 rounded-lg bg-card border border-border flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                        </a>
+                        <a href="#" class="w-9 h-9 rounded-lg bg-card border border-border flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-4">Продукт</h4>
+                    <ul class="space-y-2.5">
+                        <li><a href="#features" class="text-muted text-sm hover:text-white transition-colors">Функции</a></li>
+                        <li><a href="#pricing" class="text-muted text-sm hover:text-white transition-colors">Тарифы</a></li>
+                        <li><a href="#cases" class="text-muted text-sm hover:text-white transition-colors">Кейсы</a></li>
+                        <li><a href="#faq" class="text-muted text-sm hover:text-white transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold text-sm mb-4">Контакты</h4>
+                    <ul class="space-y-2.5">
+                        <li><a href="https://t.me/repa_bot" target="_blank" class="text-muted text-sm hover:text-white transition-colors">Telegram бот</a></li>
+                        <li><a href="https://t.me/repa_support" target="_blank" class="text-muted text-sm hover:text-white transition-colors">Поддержка</a></li>
+                        <li><a href="#" class="text-muted text-sm hover:text-white transition-colors">Блог</a></li>
+                        <li><a href="#" class="text-muted text-sm hover:text-white transition-colors">Документация API</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-muted text-xs">© 2025 РЕПА. Все права защищены.</p>
+                <div class="flex gap-6">
+                    <a href="#" class="text-muted text-xs hover:text-white transition-colors">Политика конфиденциальности</a>
+                    <a href="#" class="text-muted text-xs hover:text-white transition-colors">Оферта</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[100] bg-card border border-green-500/30 rounded-xl px-5 py-3 shadow-lg shadow-black/50 flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-400 flex-shrink-0"></i>
+        <span id="toast-text" class="text-white text-sm"></span>
     </div>
 
     <script>
-        // Инициализация Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть на весь экран
+        // Initialize Lucide icons
+        lucide.createIcons();
 
-        // Получаем данные из URL (например: ?data=4.5,4.2,4.8,5.0)
-        const urlParams = new URLSearchParams(window.location.search);
-        const rawData = urlParams.get('data') || "0,0,0,0,0";
-        const chartData = rawData.split(',').map(Number);
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        // Close mobile menu on link click
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
 
-        const ctx = document.getElementById('myChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'],
-                datasets: [{
-                    label: 'Рейтинг товара',
-                    data: chartData,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    fill: true,
-                    tension: 0.4, // Делает линию плавной
-                    borderWidth: 3
-                }]
-            },
-            options: {
-                animation: {
-                    duration: 2000, // Анимация на 2 секунды
-                    easing: 'easeInOutQuart'
-                },
-                scales: {
-                    y: { min: 0, max: 5, grid: { color: '#374151' } },
-                    x: { grid: { display: false } }
+        // Scroll reveal
+        const revealElements = document.querySelectorAll('.section-reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // FAQ toggle
+        function toggleFaq(item) {
+            const isOpen = item.classList.contains('open');
+            // Close all
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+            // Open clicked if it was closed
+            if (!isOpen) {
+                item.classList.add('open');
+            }
+        }
+
+        // Case tab switcher
+        function switchCase(platform) {
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-subtle');
+            });
+            event.target.classList.add('active');
+            event.target.classList.remove('text-subtle');
+
+            const labels = document.querySelectorAll('[id^="case-platform-"]');
+            labels.forEach(label => {
+                label.textContent = platform.toUpperCase();
+            });
+        }
+
+        // Toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2500);
+        }
+
+        // Navbar background on scroll
+        const nav = document.querySelector('nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.style.borderBottomColor = '#1E1E1E';
+            } else {
+                nav.style.borderBottomColor = 'transparent';
+            }
+        });
+
+        // Simulate typing effect for AI reply on load (subtle)
+        window.addEventListener('load', () => {
+            const replyEl = document.getElementById('reply-text');
+            const fullText = replyEl.textContent;
+            replyEl.textContent = '';
+            replyEl.style.opacity = '1';
+            let i = 0;
+            const speed = 8;
+            function typeChar() {
+                if (i < fullText.length) {
+                    replyEl.textContent += fullText.charAt(i);
+                    i++;
+                    setTimeout(typeChar, speed);
                 }
             }
+            setTimeout(typeChar, 1500);
         });
     </script>
 </body>
