@@ -132,9 +132,16 @@
                 <button class="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center" onclick="switchTo('prof')">
                     <span class="text-accent font-black text-sm">12</span>
                 </button>
-            </div>
+        </div>
         </div>
 
+        <!-- Review Input -->
+        <div class="card p-4 mb-5 anim" style="animation-delay:.05s">
+            <h3 class="text-white text-sm font-bold mb-3">💬 Быстрая генерация</h3>
+            <textarea id="review-input" class="w-full h-20 bg-surface border border-border rounded-xl p-3 text-fg text-sm resize-none mb-3" placeholder="Вставьте текст отзыва..."></textarea>
+            <button class="btn-accent w-full py-3 text-sm" onclick="generateAnswer()">⚡ Сгенерировать ответ</button>
+        </div>
+        
         <!-- Trial Banner -->
         <div class="rounded-2xl p-4 mb-5 border border-accent/20 anim" style="background:linear-gradient(135deg,rgb(var(--accent)/.12),transparent)">
             <div class="flex items-center gap-3">
@@ -965,6 +972,20 @@
 <script>
 lucide.createIcons();
 
+const WebApp = window.Telegram && window.Telegram.WebApp;
+if (WebApp) {
+    WebApp.ready();
+    WebApp.expand();
+}
+
+function sendToBot(action, payload = {}) {
+    if (WebApp) {
+        WebApp.sendData(JSON.stringify({ action, ...payload }));
+    } else {
+        toast('Откройте приложение через Telegram');
+    }
+}
+
 const pages={dash:0,revs:1,ai:2,prof:3};
 const navBtns=document.querySelectorAll('.bnav-item');
 
@@ -1007,6 +1028,26 @@ function cpCode(){
     const c=document.getElementById('icode').textContent;
     if(navigator.clipboard)navigator.clipboard.writeText(c).then(()=>toast('Код скопирован: '+c));
     else toast('Код: '+c);
+}
+
+function generateAnswer() {
+    const reviewText = document.getElementById('review-input')?.value?.trim();
+    if (!reviewText) {
+        toast('Введите текст отзыва');
+        return;
+    }
+    sendToBot('generate', { text: reviewText, stars: 5 });
+    toast('Запрос отправлен в бот...');
+}
+
+function requestBalance() {
+    sendToBot('balance');
+    toast('Запрос баланса...');
+}
+
+function requestHistory() {
+    sendToBot('history');
+    toast('Запрос истории...');
 }
 </script>
 </body>
