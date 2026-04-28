@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0B0F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Repa — Reputation Dashboard</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════
+       CSS VARIABLES & THEME SYSTEM
+       ═══════════════════════════════════════════════════════════════ */
+
+    :root {
+      --radius: 0.75rem;
+      /* Light theme (Telegram light mode) */
+      --background: #f5f7fa;
+      --foreground: #111827;
+      --card: #ffffff;
+      --card-foreground: #111827;
+      --primary: #3b82f6;
+      --primary-foreground: #ffffff;
+      --secondary: #f1f5f9;
+      --secondary-foreground: #111827;
+      --muted: #f1f5f9;
+      --muted-foreground: #6b7280;
+      --accent: #eff6ff;
+      --accent-foreground: #1e40af;
+      --border: #e5e7eb;
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --card-hover-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      --card-hover-border: rgba(0,0,0,0.08);
+      --chart-grid: rgba(0,0,0,0.06);
+      --chart-text: #6b7280;
+      --progress-track: #e5e7eb;
+      --skeleton-from: #f1f5f9;
+      --skeleton-to: #e2e8f0;
+      --time-saving-glow: rgba(59,130,246,0.06);
+    }
+
+    .dark {
+      --background: #0B0B0F;
+      --foreground: #e2e8f0;
+      --card: #16161e;
+      --card-foreground: #f1f5f9;
+      --primary: #3b82f6;
+      --primary-foreground: #ffffff;
+      --secondary: #1e1e2a;
+      --secondary-foreground: #e2e8f0;
+      --muted: #1e1e2a;
+      --muted-foreground: #64748b;
+      --accent: #1e293b;
+      --accent-foreground: #60a5fa;
+      --border: rgba(255,255,255,0.06);
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --card-hover-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08);
+      --card-hover-border: rgba(255,255,255,0.1);
+      --chart-grid: rgba(255,255,255,0.04);
+      --chart-text: #64748b;
+      --progress-track: rgba(255,255,255,0.06);
+      --skeleton-from: #1e1e2a;
+      --skeleton-to: #2a2a3a;
+      --time-saving-glow: rgba(59,130,246,0.08);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BRAND COLORS
+       ═══════════════════════════════════════════════════════════════ */
+
+    :root {
+      --repa-blue: #3b82f6;
+      --repa-blue-light: #60a5fa;
+      --repa-blue-dark: #1e40af;
+      --repa-purple: #8b5cf6;
+      --repa-purple-light: #a78bfa;
+      --repa-green: #10b981;
+      --repa-green-light: #34d399;
+      --repa-amber: #f59e0b;
+      --repa-amber-light: #fbbf24;
+      --repa-red: #ef4444;
+      --repa-text-tertiary: #64748b;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       BASE RESET & TYPOGRAPHY
+       ═══════════════════════════════════════════════════════════════ */
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 0; height: 0; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANIMATIONS & KEYFRAMES
+       ═══════════════════════════════════════════════════════════════ */
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 200%; }
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes logoSpin {
+      from { transform: rotate(-180deg) scale(0); }
+      to { transform: rotate(0deg) scale(1); }
+    }
+
+    @keyframes logoBreathing {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(59,130,246,0); }
+      50% { transform: scale(1.03); box-shadow: 0 0 12px rgba(59,130,246,0.15); }
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes statusGlowGreen {
+      0%, 100% { text-shadow: 0 0 6px rgba(16,185,129,0.2); }
+      50% { text-shadow: 0 0 12px rgba(16,185,129,0.4); }
+    }
+
+    @keyframes statusGlowBlue {
+      0%, 100% { text-shadow: 0 0 6px rgba(59,130,246,0.2); }
+      50% { text-shadow: 0 0 12px rgba(59,130,246,0.4); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 6px rgba(59,130,246,0.1); }
+      50% { box-shadow: 0 0 16px rgba(59,130,246,0.2); }
+    }
+
+    @keyframes iconFloat {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(2deg); }
+      75% { transform: rotate(-2deg); }
+    }
+
+    @keyframes chartReveal {
+      from { clip-path: inset(0 100% 0 0); opacity: 0; }
+      to { clip-path: inset(0 0% 0 0); opacity: 1; }
+    }
+
+    @keyframes numberScale {
+      0% { opacity: 0; transform: translateY(6px); }
+      30% { opacity: 1; }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes skeletonShimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @keyframes springIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      60% { transform: scale(1.05); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes progressFill {
+      from { width: 0%; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       UTILITY CLASSES
+       ═══════════════════════════════════════════════════════════════ */
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    .animate-fade-in-scale {
+      animation: fadeInScale 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    .animate-slide-left {
+      animation: slideInLeft 0.3s ease-out both;
+    }
+
+    .animate-slide-right {
+      animation: slideInRight 0.3s ease-out both;
+    }
+
+    .animate-slide-up {
+      animation: slideInUp 0.3s ease-out both;
+    }
+
+    .animate-spring {
+      animation: springIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .animate-chart-reveal {
+      animation: chartReveal 0.8s ease-out both;
+    }
+
+    .animate-number {
+      animation: numberScale 0.3s ease-out both;
+    }
+
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.1s; }
+    .delay-3 { animation-delay: 0.15s; }
+    .delay-4 { animation-delay: 0.2s; }
+    .delay-5 { animation-delay: 0.25s; }
+    .delay-6 { animation-delay: 0.3s; }
+    .delay-7 { animation-delay: 0.35s; }
+    .delay-8 { animation-delay: 0.4s; }
+    .delay-9 { animation-delay: 0.5s; }
+    .delay-10 { animation-delay: 0.6s; }
+    .delay-11 { animation-delay: 0.7s; }
+    .delay-12 { animation-delay: 0.8s; }
+
+    .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+    .logo-breathe { animation: logoBreathing 4s ease-in-out infinite; }
+    .glow-pulse { animation: glowPulse 4s ease-in-out infinite; }
+    .icon-float { animation: iconFloat 5s ease-in-out infinite; }
+    .status-glow-green { animation: statusGlowGreen 3s ease-in-out infinite; }
+    .status-glow-blue { animation: statusGlowBlue 3s ease-in-out infinite; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       GRADIENT TEXT
+       ═══════════════════════════════════════════════════════════════ */
+
+    .text-grad-blue {
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .text-grad-green {
+      background: linear-gradient(135deg, #10b981, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       CARD SYSTEM
+       ═══════════════════════════════════════════════════════════════ */
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1),
+                  box-shadow 0.25s ease,
+                  border-color 0.2s ease;
+    }
+
+    .card:active {
+      border-color: rgba(59,130,246,0.3);
+    }
+
+    /* KPI cards */
+    .kpi-card {
+      position: relative;
+      overflow: hidden;
+      cursor: default;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      opacity: 0.8;
+    }
+
+    .kpi-card-blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .kpi-card-purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+    .kpi-card-amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .kpi-card-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-hover-shadow);
+      border-color: var(--card-hover-border);
+    }
+
+    .kpi-card:active {
+      transform: scale(0.98);
+      transition-duration: 0.1s;
+    }
+
+    /* Premium cards */
+    .premium-card {
+      border: 1px solid transparent;
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1),
+                  box-shadow 0.25s ease,
+                  background-color 0.2s ease,
+                  border-color 0.2s ease;
+      cursor: default;
+    }
+
+    .premium-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(59,130,246,0.15);
+    }
+
+    .dark .premium-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      background-color: rgba(30,41,59,0.5);
+    }
+
+    .premium-card:active {
+      transform: translateY(0) scale(0.99);
+    }
+
+    /* Gradient border card */
+    .gradient-border-card {
+      position: relative;
+      overflow: hidden;
+      border: none !important;
+    }
+
+    .gradient-border-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      padding: 1px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
+      background-size: 300% 300%;
+      animation: gradientShift 6s ease infinite;
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       PROGRESS BAR
+       ═══════════════════════════════════════════════════════════════ */
+
+    .repa-progress {
+      height: 6px;
+      border-radius: 6px;
+      background: var(--progress-track);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .repa-progress-bar {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      position: relative;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .repa-progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2.5s ease-in-out infinite;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TIME SAVING CARD
+       ═══════════════════════════════════════════════════════════════ */
+
+    .time-saving-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .time-saving-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -30%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, var(--time-saving-glow), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       SKELETON LOADING
+       ═══════════════════════════════════════════════════════════════ */
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--skeleton-from) 25%, var(--skeleton-to) 37%, var(--skeleton-from) 63%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.5s ease-in-out infinite;
+      border-radius: 6px;
+    }
+
+    .skeleton-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ICON CONTAINERS
+       ═══════════════════════════════════════════════════════════════ */
+
+    .icon-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .icon-box-sm { width: 28px; height: 28px; }
+    .icon-box-md { width: 32px; height: 32px; }
+    .icon-box-lg { width: 36px; height: 36px; }
+    .icon-box-xl { width: 40px; height: 40px; }
+
+    .icon-box svg { width: 16px; height: 16px; }
+    .icon-box-md svg { width: 18px; height: 18px; }
+    .icon-box-lg svg { width: 18px; height: 18px; }
+    .icon-box-xl svg { width: 20px; height: 20px; }
+
+    .bg-blue-10 { background: rgba(59,130,246,0.1); }
+    .bg-purple-10 { background: rgba(139,92,246,0.1); }
+    .bg-green-10 { background: rgba(16,185,129,0.1); }
+    .bg-amber-10 { background: rgba(245,158,11,0.1); }
+
+    .text-blue { color: #3b82f6; }
+    .text-purple { color: #8b5cf6; }
+    .text-green { color: #10b981; }
+    .text-amber { color: #f59e0b; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TREND BADGE
+       ═══════════════════════════════════════════════════════════════ */
+
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(16,185,129,0.1);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #10b981;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TOOLTIP
+       ═══════════════════════════════════════════════════════════════ */
+
+    .tooltip-container {
+      position: relative;
+    }
+
+    .tooltip-bubble {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      min-width: 220px;
+      z-index: 100;
+      opacity: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .tooltip-bubble.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .tooltip-trigger {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--secondary);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.15s ease;
+      color: var(--muted-foreground);
+    }
+
+    .tooltip-trigger:hover {
+      background: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .tooltip-trigger:active {
+      transform: scale(0.95);
+    }
+
+    .tooltip-trigger svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .tooltip-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 8px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       LAYOUT
+       ═══════════════════════════════════════════════════════════════ */
+
+    .dashboard {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 56px 16px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 100vh;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .section-gap { margin-bottom: 0; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TYPOGRAPHY SCALE
+       ═══════════════════════════════════════════════════════════════ */
+
+    .text-xs { font-size: 10px; }
+    .text-sm { font-size: 11px; }
+    .text-base { font-size: 12px; }
+    .text-md { font-size: 13px; }
+    .text-lg { font-size: 14px; }
+    .text-xl { font-size: 15px; }
+    .text-2xl { font-size: 22px; }
+    .text-kpi { font-size: 28px; }
+
+    .uppercase { text-transform: uppercase; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .tracking-tight { letter-spacing: -0.01em; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .leading-relaxed { line-height: 1.6; }
+    .leading-snug { line-height: 1.4; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard" id="app">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         HEADER: BRAND & STATUS
+         ═══════════════════════════════════════════════════════════ -->
+    <header class="animate-fade-in-up delay-1" id="header-section">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <div class="pulse-dot" style="width:6px; height:6px; border-radius:50%; background:#10b981;"></div>
+            <p class="text-sm uppercase tracking-wider font-medium" style="color:var(--muted-foreground);">Reputation</p>
+          </div>
+          <h1 class="text-2xl font-bold tracking-tight" style="color:var(--card-foreground);">Dashboard</h1>
+        </div>
+        <div class="logo-breathe" style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#3b82f6,#8b5cf6); display:flex; align-items:center; justify-content:center; animation-name: logoSpin, logoBreathing; animation-duration: 0.5s, 4s; animation-timing-function: cubic-bezier(0.34,1.56,0.64,1), ease-in-out; animation-iteration-count: 1, infinite; animation-fill-mode: both, none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Status Card (populated by JS) -->
+      <div id="status-card"></div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         KPI CARDS (populated by JS)
+         ═══════════════════════════════════════════════════════════ -->
+    <section id="kpi-section"></section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TIME SAVING BLOCK (populated by JS)
+         ═══════════════════════════════════════════════════════════ -->
+    <section id="time-saving-section"></section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         REPUTATION CHART (populated by JS)
+         ═══════════════════════════════════════════════════════════ -->
+    <section id="chart-section"></section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PREMIUM SUGGESTION BLOCK
+         ═══════════════════════════════════════════════════════════ -->
+    <section class="animate-fade-in-up delay-10" id="premium-section">
+      <div class="gradient-border-card card" style="padding:0;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:16px; position:relative; z-index:2;">
+          <!-- Premium header -->
+          <div class="animate-slide-up delay-10" style="display:flex; align-items:center; gap:10px;">
+            <div class="icon-box icon-box-md bg-purple-10">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <p class="text-lg font-semibold" style="color:var(--card-foreground);">Activate premium to unlock</p>
+              <p class="text-sm" style="color:var(--muted-foreground); margin-top:2px;">Advanced analytics & insights</p>
+            </div>
+          </div>
+
+          <!-- Premium features list -->
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Competitor Analytics -->
+            <div class="premium-card animate-slide-right delay-6" style="display:flex; align-items:flex-start; gap:12px; background:rgba(var(--secondary),0.5); background:var(--secondary); border-radius:12px; padding:14px;">
+              <div class="icon-box icon-box-lg bg-blue-10" style="margin-top:2px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+              </div>
+              <div style="min-width:0;">
+                <p class="text-md font-semibold" style="color:var(--card-foreground);">Competitor Analytics</p>
+                <p class="text-sm" style="color:var(--muted-foreground); margin-top:4px; line-height:1.6;">Compare how other sellers in your category respond to similar reviews.</p>
+              </div>
+            </div>
+
+            <!-- TOP Customer Issues -->
+            <div class="premium-card animate-slide-right delay-7" style="display:flex; align-items:flex-start; gap:12px; background:var(--secondary); border-radius:12px; padding:14px;">
+              <div class="icon-box icon-box-lg bg-amber-10" style="margin-top:2px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div style="min-width:0;">
+                <p class="text-md font-semibold" style="color:var(--card-foreground);">TOP Customer Issues</p>
+                <p class="text-sm" style="color:var(--muted-foreground); margin-top:4px; line-height:1.6;">The most frequent customer complaints about your product and category.</p>
+              </div>
+            </div>
+
+            <!-- Personalized Templates -->
+            <div class="premium-card animate-slide-right delay-8" style="display:flex; align-items:flex-start; gap:12px; background:var(--secondary); border-radius:12px; padding:14px;">
+              <div class="icon-box icon-box-lg bg-purple-10" style="margin-top:2px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div style="min-width:0;">
+                <p class="text-md font-semibold" style="color:var(--card-foreground);">Personalized Templates</p>
+                <p class="text-sm" style="color:var(--muted-foreground); margin-top:4px; line-height:1.6;">The bot will learn to write like you, maintaining your style but faster.</p>
+              </div>
+            </div>
+
+            <!-- Weekly Summary Reports -->
+            <div class="premium-card animate-slide-right delay-9" style="display:flex; align-items:flex-start; gap:12px; background:var(--secondary); border-radius:12px; padding:14px;">
+              <div class="icon-box icon-box-lg bg-green-10" style="margin-top:2px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div style="min-width:0;">
+                <p class="text-md font-semibold" style="color:var(--card-foreground);">Weekly Summary Reports</p>
+                <p class="text-sm" style="color:var(--muted-foreground); margin-top:4px; line-height:1.6;">Where you lose the most rating and which days are best for responses.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Premium footer -->
+          <div class="animate-fade-in-up delay-11" style="display:flex; align-items:center; justify-content:center; gap:6px; padding-top:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <p class="text-xs uppercase tracking-wider font-medium" style="color:var(--muted-foreground);">Available in premium</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FOOTER
+         ═══════════════════════════════════════════════════════════ -->
+    <footer class="animate-fade-in-up delay-12" style="text-align:center; padding:16px 0;">
+      <p class="text-xs" style="color:var(--muted-foreground);" id="footer-text">Repa Bot</p>
+      <p class="text-sm" style="color:var(--muted-foreground); margin-top:4px; display:none;" id="footer-empty">
+        No data yet. Start using the bot to see your analytics.
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════════
+       SVG ICONS LIBRARY
+       ═══════════════════════════════════════════════════════════════ */
+
+    const ICONS = {
+      shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+      clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      trendingUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+      arrowUpRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>',
+      zap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    };
+
+    /* ═══════════════════════════════════════════════════════════════
+       DATA GENERATION (demo data)
+       ═══════════════════════════════════════════════════════════════ */
+
+    function generateDemoData() {
+      const now = new Date();
+      const ratingHistory = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date(now);
+        date.setDate(date.getDate() - (29 - i));
+        const baseRating = 4.72 + Math.sin(i * 0.3) * 0.05 + (Math.random() - 0.5) * 0.03;
+        const botRating = baseRating + 0.04 + Math.sin(i * 0.2) * 0.02;
+        return {
+          date: date.toISOString().split('T')[0],
+          realRating: Math.round(baseRating * 100) / 100,
+          botRating: Math.round(Math.min(5.0, botRating) * 100) / 100,
+        };
+      });
+
+      const variation = (Math.random() - 0.5) * 0.02;
+
+      return {
+        status: {
+          current: 'Active Seller',
+          nextStatus: 'Pro',
+          progress: 37,
+          reviewsToNext: 18,
+        },
+        kpi: {
+          savedRating: '+' + (0.34 + variation).toFixed(2),
+          protectedReviews: 12 + Math.floor(Math.random() * 2),
+          avgResponseTime: Math.round((1.7 + (Math.random() - 0.5) * 0.3) * 10) / 10,
+          overallRating: 4.78,
+        },
+        timeSaved: {
+          hoursPerWeek: 4.5,
+          isEstimated: false,
+        },
+        ratingChart: {
+          labels: ['Today', '3 days', 'Week', '2 weeks', 'Month'],
+          realRating: [
+            ratingHistory[29].realRating,
+            ratingHistory[27].realRating,
+            ratingHistory[23].realRating,
+            ratingHistory[16].realRating,
+            ratingHistory[0].realRating,
+          ],
+          botRating: [
+            ratingHistory[29].botRating,
+            ratingHistory[27].botRating,
+            ratingHistory[23].botRating,
+            ratingHistory[16].botRating,
+            ratingHistory[0].botRating,
+          ],
+        },
+        ratingGrowth: '+0.12',
+        lastUpdated: now.toISOString(),
+      };
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       ANIMATED NUMBER COUNTER
+       ═══════════════════════════════════════════════════════════════ */
+
+    function animateNumber(element, target, duration, decimals) {
+      const start = parseFloat(element.textContent) || 0;
+      const diff = target - start;
+      const startTime = performance.now();
+
+      function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        element.textContent = (start + diff * eased).toFixed(decimals);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       STATUS COLORS
+       ═══════════════════════════════════════════════════════════════ */
+
+    function getStatusColors(status) {
+      switch (status) {
+        case 'Expert': return { text: '#f59e0b', bg: 'rgba(245,158,11,0.1)', glow: '' };
+        case 'Pro': return { text: '#3b82f6', bg: 'rgba(59,130,246,0.1)', glow: 'status-glow-blue' };
+        default: return { text: '#10b981', bg: 'rgba(16,185,129,0.1)', glow: 'status-glow-green' };
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       RENDER FUNCTIONS
+       ═══════════════════════════════════════════════════════════════ */
+
+    function renderStatusCard(data) {
+      const colors = getStatusColors(data.status.current);
+      const container = document.getElementById('status-card');
+
+      container.innerHTML = `
+        <div class="card animate-fade-in-up delay-3" style="padding:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="icon-box icon-box-lg" style="background:${colors.bg};">
+                <span style="color:${colors.text};">${ICONS.shield}</span>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wider font-medium" style="color:var(--muted-foreground);">Your status</p>
+                <p class="text-xl font-bold animate-spring delay-4 ${colors.glow}" style="margin-top:2px; color:${colors.text};">${data.status.current}</p>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <p class="text-xs uppercase tracking-wider font-medium" style="color:var(--muted-foreground);">Next level</p>
+              <p class="text-xl font-bold animate-spring delay-5" style="margin-top:2px; color:var(--card-foreground);">${data.status.nextStatus}</p>
+            </div>
+          </div>
+
+          <p class="text-md" style="color:var(--muted-foreground); line-height:1.6; margin-bottom:14px;">
+            Thanks to the bot, you receive automatic responses to reviews.
+          </p>
+
+          <div class="animate-fade-in-up delay-6">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <span class="text-base" style="color:var(--muted-foreground);">
+                Up to next level: <strong style="color:var(--card-foreground);" id="progress-percent">${data.status.progress}%</strong>
+              </span>
+              <span class="text-base font-semibold" style="color:#3b82f6;" id="progress-reviews">${data.status.reviewsToNext} reviews</span>
+            </div>
+            <div class="repa-progress" style="margin-bottom:8px;">
+              <div class="repa-progress-bar" id="progress-bar" style="width:0%;"></div>
+            </div>
+            <p class="text-sm" style="color:#64748b;">
+              ${data.status.reviewsToNext} more reviews — and you will reach &ldquo;${data.status.nextStatus}&rdquo; status
+            </p>
+          </div>
+        </div>
+      `;
+
+      // Animate progress bar after render
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const bar = document.getElementById('progress-bar');
+          if (bar) bar.style.width = data.status.progress + '%';
+        }, 500);
+      });
+    }
+
+    function renderSkeletons() {
+      const kpiSection = document.getElementById('kpi-section');
+      kpiSection.innerHTML = `
+        <div class="kpi-grid animate-fade-in-up delay-3">
+          ${Array(4).fill(`
+            <div class="skeleton-card">
+              <div class="skeleton" style="height:12px; width:80px; margin-bottom:12px;"></div>
+              <div class="skeleton" style="height:32px; width:64px; margin-bottom:12px;"></div>
+              <div class="skeleton" style="height:12px; width:100%;"></div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      const statusCard = document.getElementById('status-card');
+      statusCard.innerHTML = `
+        <div class="skeleton-card animate-fade-in-up delay-2">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <div class="skeleton" style="width:36px; height:36px; border-radius:8px;"></div>
+            <div style="flex:1;">
+              <div class="skeleton" style="height:12px; width:60px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:16px; width:100px;"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="height:12px; width:100%; margin-bottom:14px;"></div>
+          <div class="repa-progress" style="height:6px;">
+            <div class="skeleton" style="height:100%; width:100%;"></div>
+          </div>
+        </div>
+      `;
+
+      const chartSection = document.getElementById('chart-section');
+      chartSection.innerHTML = `
+        <div class="card skeleton-card animate-fade-in-up delay-5">
+          <div class="skeleton" style="height:14px; width:140px; margin-bottom:12px;"></div>
+          <div class="skeleton" style="height:208px; width:100%; margin-bottom:12px;"></div>
+          <div class="skeleton" style="height:12px; width:100%;"></div>
+        </div>
+      `;
+
+      document.getElementById('time-saving-section').innerHTML = '';
+    }
+
+    function renderKpiCards(data) {
+      const savedRatingNum = parseFloat(data.kpi.savedRating.replace('+', '')) || 0;
+      const cards = [
+        {
+          title: 'Saved rating',
+          value: savedRatingNum,
+          decimals: 2,
+          gradClass: 'text-grad-blue',
+          caption: 'Rating increase from bot responses, 24h',
+          icon: ICONS.trendingUp,
+          iconColor: '#3b82f6',
+          iconBg: 'bg-blue-10',
+          cardClass: 'kpi-card-blue',
+          trendValue: '+0.34',
+          delay: 3,
+        },
+        {
+          title: 'Protected',
+          value: data.kpi.protectedReviews,
+          decimals: 0,
+          caption: 'Reviews the bot helped respond to today',
+          icon: ICONS.shield,
+          iconColor: '#8b5cf6',
+          iconBg: 'bg-purple-10',
+          cardClass: 'kpi-card-purple',
+          delay: 4,
+        },
+        {
+          title: 'Avg time',
+          value: data.kpi.avgResponseTime,
+          decimals: 1,
+          suffix: 'min',
+          caption: 'Average time until response is ready',
+          icon: ICONS.clock,
+          iconColor: '#f59e0b',
+          iconBg: 'bg-amber-10',
+          cardClass: 'kpi-card-amber',
+          delay: 5,
+        },
+        {
+          title: 'Overall rating',
+          value: data.kpi.overallRating,
+          decimals: 2,
+          gradClass: 'text-grad-green',
+          caption: 'Marketplace rating, last 30 days',
+          icon: ICONS.star,
+          iconColor: '#10b981',
+          iconBg: 'bg-green-10',
+          cardClass: 'kpi-card-green',
+          trendValue: '+0.12',
+          delay: 6,
+        },
+      ];
+
+      const kpiSection = document.getElementById('kpi-section');
+      kpiSection.innerHTML = `<div class="kpi-grid">${cards.map(card => `
+        <div class="card kpi-card ${card.cardClass} animate-fade-in-scale delay-${card.delay}">
+          <div style="padding:16px 16px 20px;">
+            <div class="animate-slide-left delay-${card.delay}" style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <div class="icon-box icon-box-md ${card.iconBg}">
+                <span style="color:${card.iconColor};">${card.icon}</span>
+              </div>
+              <p class="text-sm uppercase tracking-wider font-medium" style="color:var(--muted-foreground);">${card.title}</p>
+            </div>
+            <div class="animate-slide-up delay-${card.delay + 1}" style="display:flex; align-items:flex-end; gap:8px; margin-bottom:8px;">
+              <p class="text-kpi font-bold tabular-nums tracking-tight ${card.gradClass || ''}" style="color:var(--card-foreground); line-height:1;" data-target="${card.value}" data-decimals="${card.decimals}">
+                0${card.suffix ? '<span style="font-size:14px; font-weight:500; color:var(--muted-foreground); margin-left:4px;">' + card.suffix + '</span>' : ''}
+              </p>
+              ${card.trendValue ? `
+                <div class="trend-badge" style="margin-bottom:4px;">
+                  <span style="display:inline-flex;">${ICONS.arrowUpRight}</span>
+                  ${card.trendValue}
+                </div>
+              ` : ''}
+            </div>
+            <p class="animate-slide-left delay-${card.delay + 2} text-sm" style="color:var(--muted-foreground); line-height:1.6;">${card.caption}</p>
+          </div>
+        </div>
+      `).join('')}</div>`;
+
+      // Animate numbers
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          kpiSection.querySelectorAll('[data-target]').forEach(el => {
+            const target = parseFloat(el.dataset.target);
+            const decimals = parseInt(el.dataset.decimals);
+            const suffix = el.querySelector('span');
+            const suffixHTML = suffix ? suffix.outerHTML : '';
+            animateNumber(el, target, 1400, decimals);
+            // Restore suffix after animation
+            if (suffixHTML) {
+              const check = setInterval(() => {
+                const currentText = el.textContent;
+                const numPart = currentText.split('min')[0] || currentText;
+                if (Math.abs(parseFloat(numPart) - target) < 0.01) {
+                  clearInterval(check);
+                }
+              }, 100);
+            }
+          });
+        }, 300);
+      });
+    }
+
+    function renderTimeSaving(data) {
+      const container = document.getElementById('time-saving-section');
+      container.innerHTML = `
+        <div class="time-saving-card card animate-fade-in-up delay-7" style="padding:16px;">
+          <div style="display:flex; align-items:center; gap:14px; position:relative; z-index:1;">
+            <div class="icon-box icon-box-xl bg-blue-10 glow-pulse icon-float">
+              <span style="color:#3b82f6;">${ICONS.zap}</span>
+            </div>
+            <div style="flex:1; min-width:0;">
+              <p class="text-md font-semibold animate-slide-up delay-7" style="color:var(--card-foreground); margin-bottom:4px;">Time saved</p>
+              <p class="text-base animate-slide-up delay-8" style="color:var(--muted-foreground); line-height:1.6;">
+                Thanks to the bot, you save <strong class="animate-spring delay-8" style="color:#3b82f6;">~${data.timeSaved.hoursPerWeek} hours</strong> per week on manually checking reviews and ratings.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    let chartInstance = null;
+
+    function renderChart(data) {
+      const container = document.getElementById('chart-section');
+      container.innerHTML = `
+        <div class="card animate-fade-in-up delay-8" style="padding:16px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <p class="text-lg font-semibold animate-slide-up delay-8" style="color:var(--card-foreground);">Reputation Dynamics</p>
+              <p class="text-sm animate-slide-up delay-9" style="color:var(--muted-foreground); margin-top:2px;">Real vs bot-assisted rating</p>
+            </div>
+            <div class="tooltip-container">
+              <button class="tooltip-trigger" id="chart-info-btn">${ICONS.info}</button>
+              <div class="tooltip-bubble" id="chart-tooltip">
+                <p style="font-size:12px; font-weight:600; margin-bottom:6px;">Chart legend</p>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <span class="tooltip-dot" style="background:#f59e0b;"></span>
+                  <span style="font-size:11px; color:var(--muted-foreground);"><strong style="color:var(--card-foreground);">Amber</strong> — Real marketplace rating.</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="tooltip-dot" style="background:#3b82f6;"></span>
+                  <span style="font-size:11px; color:var(--muted-foreground);"><strong style="color:var(--card-foreground);">Blue</strong> — Rating with bot responses.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="animate-chart-reveal delay-9" style="height:208px; margin:0 -8px; overflow:hidden; border-radius:8px;">
+            <canvas id="reputation-chart"></canvas>
+          </div>
+
+          <div class="animate-fade-in-up delay-10" style="display:flex; align-items:flex-start; gap:8px; background:var(--secondary); border-radius:8px; padding:12px; margin-top:12px;">
+            <span style="color:#10b981; flex-shrink:0; margin-top:2px; display:inline-flex;">${ICONS.trendingUp}</span>
+            <p class="text-sm" style="color:var(--muted-foreground); line-height:1.6;">
+              Thanks to the bot's system responses, your rating is maintained and growing by ~${data.ratingGrowth} points per week.
+              Without active responses, your rating could decrease noticeably faster.
+            </p>
+          </div>
+        </div>
+      `;
+
+      // Tooltip toggle
+      const infoBtn = document.getElementById('chart-info-btn');
+      const tooltip = document.getElementById('chart-tooltip');
+      if (infoBtn && tooltip) {
+        infoBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          tooltip.classList.toggle('visible');
+        });
+        document.addEventListener('click', () => tooltip.classList.remove('visible'));
+      }
+
+      // Create chart
+      const ctx = document.getElementById('reputation-chart');
+      if (!ctx) return;
+
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+
+      const isDark = document.documentElement.classList.contains('dark');
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.ratingChart.labels,
+          datasets: [
+            {
+              label: 'Real rating',
+              data: data.ratingChart.realRating,
+              borderColor: '#f59e0b',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointRadius: 3,
+              pointBackgroundColor: '#f59e0b',
+              pointBorderWidth: 0,
+              pointHoverRadius: 5,
+              pointHoverBorderWidth: 2,
+              pointHoverBorderColor: '#f59e0b',
+              pointHoverBackgroundColor: isDark ? '#16161e' : '#ffffff',
+              tension: 0.4,
+            },
+            {
+              label: 'Bot rating',
+              data: data.ratingChart.botRating,
+              borderColor: '#3b82f6',
+              backgroundColor: 'transparent',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#3b82f6',
+              pointBorderWidth: 0,
+              pointHoverRadius: 6,
+              pointHoverBorderWidth: 2,
+              pointHoverBorderColor: '#3b82f6',
+              pointHoverBackgroundColor: isDark ? '#16161e' : '#ffffff',
+              tension: 0.4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart',
+          },
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: isDark ? '#64748b' : '#6b7280',
+                font: { size: 11, family: '-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif' },
+                padding: 16,
+                boxWidth: 10,
+                boxHeight: 10,
+                borderRadius: 2,
+                useBorderRadius: true,
+              },
+            },
+            tooltip: {
+              backgroundColor: isDark ? '#1e1e2a' : '#ffffff',
+              titleColor: isDark ? '#f1f5f9' : '#111827',
+              bodyColor: isDark ? '#e2e8f0' : '#374151',
+              borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              titleFont: { size: 12, weight: '600', family: '-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif' },
+              bodyFont: { size: 11, family: '-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif' },
+              displayColors: true,
+              boxWidth: 8,
+              boxHeight: 8,
+              boxPadding: 4,
+            },
+          },
+          scales: {
+            x: {
+              grid: {
+                color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+                drawBorder: false,
+              },
+              ticks: {
+                color: isDark ? '#64748b' : '#6b7280',
+                font: { size: 11, family: '-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif' },
+                padding: 8,
+              },
+              border: { display: false },
+            },
+            y: {
+              min: 3.5,
+              max: 5.0,
+              grid: {
+                color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)',
+                drawBorder: false,
+              },
+              ticks: {
+                color: isDark ? '#64748b' : '#6b7280',
+                font: { size: 11, family: '-apple-system, BlinkMacSystemFont, Segoe UI, Inter, sans-serif' },
+                padding: 8,
+                stepSize: 0.5,
+              },
+              border: { display: false },
+            },
+          },
+        },
+      });
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       MAIN RENDER & DATA FETCH
+       ═══════════════════════════════════════════════════════════════ */
+
+    let currentData = null;
+    let telegramReady = false;
+    let refreshInterval = null;
+
+    function renderDashboard(data) {
+      currentData = data;
+      renderStatusCard(data);
+      renderKpiCards(data);
+      renderTimeSaving(data);
+      renderChart(data);
+
+      const footerText = document.getElementById('footer-text');
+      if (telegramReady) {
+        footerText.textContent = 'Repa Bot \u00B7 Telegram Mini App';
+      }
+    }
+
+    async function fetchAndRender() {
+      try {
+        // Try to fetch from API first, fall back to local demo data
+        let data;
+        try {
+          const res = await fetch('/api/reputation?user_id=demo');
+          if (res.ok) {
+            data = await res.json();
+          } else {
+            data = generateDemoData();
+          }
+        } catch {
+          data = generateDemoData();
+        }
+        renderDashboard(data);
+      } catch (err) {
+        console.error('Failed to render dashboard:', err);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       TELEGRAM WEB APP INTEGRATION
+       ═══════════════════════════════════════════════════════════════ */
+
+    function initTelegram() {
+      try {
+        const WebApp = window.Telegram?.WebApp;
+        if (WebApp) {
+          WebApp.ready();
+          WebApp.expand();
+          const html = document.documentElement;
+          if (WebApp.colorScheme === 'light') {
+            html.classList.remove('dark');
+          } else {
+            html.classList.add('dark');
+          }
+          WebApp.onEvent('themeChanged', () => {
+            if (WebApp.colorScheme === 'light') {
+              html.classList.remove('dark');
+            } else {
+              html.classList.add('dark');
+            }
+            // Re-render chart with new theme
+            if (currentData) renderChart(currentData);
+          });
+          telegramReady = true;
+        }
+      } catch {
+        // Not in Telegram
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       INITIALIZATION
+       ═══════════════════════════════════════════════════════════════ */
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTelegram();
+      renderSkeletons();
+
+      // Fetch data with slight delay for loading animation
+      setTimeout(fetchAndRender, 800);
+
+      // Auto-refresh every 20 seconds
+      refreshInterval = setInterval(fetchAndRender, 20000);
+    });
+  </script>
+</body>
+</html>
