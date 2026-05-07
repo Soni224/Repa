@@ -1,26 +1,1361 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <script src="https://telegram.org"></script>
-    <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; }
-        button { background: #0088cc; color: white; border: none; padding: 15px; margin: 10px; border-radius: 10px; width: 80%; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Mini App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  /* === CSS-переменные: будут перезаписаны из Telegram.themeParams === */
+  :root {
+    --bg: #1a1a2e;
+    --bg-secondary: #16213e;
+    --fg: #eaf0fb;
+    --fg-secondary: #8892a4;
+    --accent: #e94560;
+    --accent-hover: #ff6b81;
+    --card: rgba(255,255,255,0.06);
+    --card-hover: rgba(255,255,255,0.1);
+    --border: rgba(255,255,255,0.08);
+    --danger: #e94560;
+    --success: #2ed573;
+    --warning: #ffa502;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  [data-theme="light"] {
+    --bg: #f0f2f5;
+    --bg-secondary: #e4e7ec;
+    --fg: #1a1a2e;
+    --fg-secondary: #6b7280;
+    --card: rgba(0,0,0,0.04);
+    --card-hover: rgba(0,0,0,0.07);
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* === Скроллбар === */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--fg-secondary); border-radius: 4px; }
+
+  /* === Обёртка с учётом safe-area === */
+  .app-shell {
+    min-height: 100vh;
+    padding: var(--safe-top) 0 calc(var(--safe-bottom) + 60px) 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* === Фоновая атмосфера === */
+  .bg-glow {
+    position: fixed;
+    top: -120px;
+    right: -80px;
+    width: 320px;
+    height: 320px;
+    background: var(--accent);
+    opacity: 0.08;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+    animation: glowPulse 6s ease-in-out infinite alternate;
+  }
+  .bg-glow-2 {
+    position: fixed;
+    bottom: -100px;
+    left: -60px;
+    width: 260px;
+    height: 260px;
+    background: var(--accent);
+    opacity: 0.05;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: glowPulse 8s ease-in-out 2s infinite alternate;
+  }
+  @keyframes glowPulse {
+    0% { transform: scale(1); opacity: 0.06; }
+    100% { transform: scale(1.3); opacity: 0.12; }
+  }
+
+  /* === Экраны === */
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    animation: screenIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .screen.active { display: flex; }
+
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === Хедер === */
+  .header {
+    padding: 20px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-back {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .header-back:hover { background: var(--card-hover); }
+  .header-back:active { transform: scale(0.92); }
+  .header-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  /* === Профиль-карта === */
+  .profile-card {
+    margin: 8px 20px 20px;
+    padding: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.25s;
+  }
+  .profile-card:active { transform: scale(0.98); }
+  .profile-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+  }
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-name {
+    font-size: 17px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .profile-id {
+    font-size: 13px; color: var(--fg-secondary); margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .profile-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(233,69,96,0.12);
+    color: var(--accent);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* === Статистика === */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 0 20px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.25s;
+  }
+  .stat-card:active { transform: scale(0.95); }
+  .stat-value {
+    font-size: 26px; font-weight: 800;
+    line-height: 1;
+    color: var(--fg);
+  }
+  .stat-label {
+    font-size: 11px; color: var(--fg-secondary);
+    margin-top: 6px; font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* === Секции === */
+  .section {
+    padding: 0 20px;
+    margin-bottom: 24px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: 15px; font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .section-action {
+    font-size: 13px; color: var(--accent);
+    font-weight: 600; cursor: pointer;
+    background: none; border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .section-action:hover { background: rgba(233,69,96,0.1); }
+  .section-action:active { transform: scale(0.95); }
+
+  /* === Навигационные карточки === */
+  .nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .nav-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .nav-card:hover { background: var(--card-hover); }
+  .nav-card:active { transform: scale(0.96); }
+  .nav-card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    color: #fff;
+  }
+  .nav-card-label {
+    font-size: 14px; font-weight: 700;
+  }
+  .nav-card-desc {
+    font-size: 12px; color: var(--fg-secondary);
+    line-height: 1.4;
+  }
+
+  /* === Задачи === */
+  .tasks-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .task-item:active { transform: scale(0.98); }
+  .task-item.done { opacity: 0.5; }
+  .task-item.done .task-text { text-decoration: line-through; }
+
+  .task-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--fg-secondary);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s;
+    font-size: 11px; color: transparent;
+  }
+  .task-item.done .task-check {
+    border-color: var(--success);
+    background: var(--success);
+    color: #fff;
+  }
+
+  .task-text {
+    flex: 1;
+    font-size: 14px; font-weight: 500;
+    min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .task-priority {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .task-delete {
+    background: none; border: none;
+    color: var(--fg-secondary);
+    font-size: 14px;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    opacity: 0;
+  }
+  .task-item:hover .task-delete,
+  .task-item:focus-within .task-delete { opacity: 1; }
+  .task-delete:hover { color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--fg-secondary);
+  }
+  .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* === Инпут добавления задачи === */
+  .add-task-bar {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+  .add-task-input {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .add-task-input::placeholder { color: var(--fg-secondary); }
+  .add-task-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(233,69,96,0.15); }
+
+  .add-task-btn {
+    width: 46px; height: 46px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .add-task-btn:hover { background: var(--accent-hover); }
+  .add-task-btn:active { transform: scale(0.92); }
+
+  /* === Приоритет-селектор === */
+  .priority-row {
+    display: flex; gap: 8px;
+    padding: 0 20px;
+    margin-bottom: 12px;
+  }
+  .priority-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .priority-chip.active { color: #fff; border-color: transparent; }
+  .priority-chip[data-p="high"].active { background: var(--danger); }
+  .priority-chip[data-p="medium"].active { background: var(--warning); color: #1a1a2e; }
+  .priority-chip[data-p="low"].active { background: var(--success); color: #1a1a2e; }
+  .priority-chip:active { transform: scale(0.93); }
+
+  /* === Заметки === */
+  .notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .note-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+  .note-card:hover { background: var(--card-hover); }
+  .note-card:active { transform: scale(0.96); }
+  .note-card-text {
+    font-size: 13px; line-height: 1.5;
+    color: var(--fg);
+    word-break: break-word;
+  }
+  .note-card-date {
+    font-size: 11px; color: var(--fg-secondary);
+    margin-top: 10px;
+  }
+  .note-card-add {
+    border: 2px dashed var(--border);
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-secondary);
+    font-size: 28px;
+  }
+
+  /* === Модальное окно заметки === */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: modalBgIn 0.25s ease;
+  }
+  .modal-overlay.active { display: flex; }
+  @keyframes modalBgIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal-sheet {
+    background: var(--bg);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 500px;
+    max-height: 80vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: sheetUp 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    border-radius: 4px;
+    background: var(--fg-secondary);
+    opacity: 0.3;
+    margin: 0 auto 6px;
+  }
+  .modal-title {
+    font-size: 17px; font-weight: 700;
+  }
+  .modal-textarea {
+    flex: 1;
+    min-height: 140px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--fg);
+    font-size: 14px;
+    font-family: inherit;
+    padding: 14px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal-textarea:focus { border-color: var(--accent); }
+  .modal-actions {
+    display: flex; gap: 10px;
+  }
+  .modal-btn {
+    flex: 1;
+    padding: 13px;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .modal-btn:active { transform: scale(0.97); }
+  .modal-btn-primary { background: var(--accent); color: #fff; }
+  .modal-btn-secondary { background: var(--card); color: var(--fg); border: 1px solid var(--border); }
+  .modal-btn-danger { background: rgba(233,69,96,0.12); color: var(--danger); }
+
+  /* === Настройки === */
+  .settings-group {
+    padding: 0 20px;
+    margin-bottom: 24px;
+  }
+  .settings-label {
+    font-size: 11px; font-weight: 700;
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+  .settings-items { display: flex; flex-direction: column; gap: 2px; }
+  .settings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .settings-item:first-child { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+  .settings-item:last-child { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+  .settings-item:only-child { border-radius: var(--radius-sm); }
+  .settings-item + .settings-item { border-top: none; }
+  .settings-item:active { background: var(--card-hover); }
+  .settings-item-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .settings-item-left i { color: var(--fg-secondary); font-size: 16px; width: 20px; text-align: center; }
+  .settings-item-label { font-size: 14px; font-weight: 500; }
+  .settings-item-value { font-size: 13px; color: var(--fg-secondary); }
+
+  /* === Тоггл === */
+  .toggle {
+    width: 44px; height: 26px;
+    border-radius: 13px;
+    background: var(--fg-secondary);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.25s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* === Тост === */
+  .toast-container {
+    position: fixed;
+    top: calc(var(--safe-top) + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    animation: toastIn 0.35s cubic-bezier(0.22,1,0.36,1), toastOut 0.3s 2.2s ease forwards;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  @keyframes toastIn { from { opacity:0; transform:translateY(-12px) scale(0.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+  @keyframes toastOut { to { opacity:0; transform:translateY(-8px) scale(0.95); } }
+
+  /* === Демо-режим баннер === */
+  .demo-banner {
+    margin: 0 20px 16px;
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,165,2,0.1);
+    border: 1px solid rgba(255,165,2,0.2);
+    color: var(--warning);
+    font-size: 12px;
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.4;
+  }
+  .demo-banner.show { display: flex; }
+  .demo-banner i { font-size: 16px; flex-shrink: 0; }
+
+  /* === Адаптивность === */
+  @media (min-width: 500px) {
+    .app-shell { max-width: 500px; margin: 0 auto; }
+  }
+
+  /* === Уменьшение анимаций === */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
 </head>
 <body>
-    <h1>Меню (150+ кнопок)</h1>
-    <button onclick="sendData('Настройка 1')">Настройка 1</button>
-    <button onclick="sendData('Баланс')">Проверить баланс</button>
 
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand(); // Разворачиваем на весь экран
+<!-- Фоновые пятна -->
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
 
-        function sendData(text) {
-            // Вариант 1: Отправить данные и закрыть (sendData)
-            tg.sendData(text); 
-        }
-    </script>
+<!-- Тосты -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app-shell">
+
+  <!-- ========== ГЛАВНЫЙ ЭКРАН ========== -->
+  <div class="screen active" id="screenHome">
+    <div class="header">
+      <div class="profile-avatar" id="profileAvatar">?</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:14px; color:var(--fg-secondary); font-weight:500;">Добро пожаловать,</div>
+        <div class="profile-name" id="profileName">Пользователь</div>
+      </div>
+      <div class="profile-badge">Mini App</div>
+    </div>
+
+    <div class="demo-banner" id="demoBanner">
+      <i class="fa-solid fa-flask"></i>
+      <span>Демо-режим: данные сохраняются локально. Откройте через бота для полной работы.</span>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="statTasks">0</div>
+        <div class="stat-label">Задач</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statDone">0</div>
+        <div class="stat-label">Выполнено</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statNotes">0</div>
+        <div class="stat-label">Заметок</div>
+      </div>
+    </div>
+
+    <!-- Навигация -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Разделы</div>
+      </div>
+      <div class="nav-grid">
+        <div class="nav-card" onclick="navigateTo('tasks')">
+          <div class="nav-card-icon" style="background:linear-gradient(135deg,#e94560,#ff6b81);">
+            <i class="fa-solid fa-list-check"></i>
+          </div>
+          <div class="nav-card-label">Задачи</div>
+          <div class="nav-card-desc">Управление делами и приоритетами</div>
+        </div>
+        <div class="nav-card" onclick="navigateTo('notes')">
+          <div class="nav-card-icon" style="background:linear-gradient(135deg,#ffa502,#ffd43b);">
+            <i class="fa-solid fa-note-sticky"></i>
+          </div>
+          <div class="nav-card-label">Заметки</div>
+          <div class="nav-card-desc">Быстрые записи и идеи</div>
+        </div>
+        <div class="nav-card" onclick="navigateTo('settings')">
+          <div class="nav-card-icon" style="background:linear-gradient(135deg,#2ed573,#7bed9f);">
+            <i class="fa-solid fa-gear"></i>
+          </div>
+          <div class="nav-card-label">Настройки</div>
+          <div class="nav-card-desc">Оформление и параметры</div>
+        </div>
+        <div class="nav-card" onclick="sendDataToBot()">
+          <div class="nav-card-icon" style="background:linear-gradient(135deg,#5352ed,#7c7cf8);">
+            <i class="fa-solid fa-paper-plane"></i>
+          </div>
+          <div class="nav-card-label">Отправить в бот</div>
+          <div class="nav-card-desc">Экспорт данных чатом</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ЭКРАН ЗАДАЧ ========== -->
+  <div class="screen" id="screenTasks">
+    <div class="header">
+      <div class="header-back" onclick="navigateTo('home')">
+        <i class="fa-solid fa-chevron-left" style="font-size:13px;"></i>
+      </div>
+      <div class="header-title">Задачи</div>
+    </div>
+
+    <div class="priority-row">
+      <div class="priority-chip active" data-p="medium" onclick="selectPriority(this)">Средний</div>
+      <div class="priority-chip" data-p="high" onclick="selectPriority(this)">Высокий</div>
+      <div class="priority-chip" data-p="low" onclick="selectPriority(this)">Низкий</div>
+    </div>
+
+    <div class="add-task-bar">
+      <input class="add-task-input" id="taskInput" placeholder="Новая задача..." maxlength="120"
+        onkeydown="if(event.key==='Enter')addTask()">
+      <button class="add-task-btn" onclick="addTask()">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    </div>
+
+    <div class="section" style="flex:1;">
+      <div class="section-header">
+        <div class="section-title" id="tasksCount">0 задач</div>
+        <button class="section-action" onclick="clearDoneTasks()">Очистить выполненные</button>
+      </div>
+      <div class="tasks-list" id="tasksList"></div>
+    </div>
+  </div>
+
+  <!-- ========== ЭКРАН ЗАМЕТОК ========== -->
+  <div class="screen" id="screenNotes">
+    <div class="header">
+      <div class="header-back" onclick="navigateTo('home')">
+        <i class="fa-solid fa-chevron-left" style="font-size:13px;"></i>
+      </div>
+      <div class="header-title">Заметки</div>
+    </div>
+
+    <div class="section" style="flex:1;">
+      <div class="notes-grid" id="notesGrid"></div>
+    </div>
+  </div>
+
+  <!-- ========== ЭКРАН НАСТРОЕК ========== -->
+  <div class="screen" id="screenSettings">
+    <div class="header">
+      <div class="header-back" onclick="navigateTo('home')">
+        <i class="fa-solid fa-chevron-left" style="font-size:13px;"></i>
+      </div>
+      <div class="header-title">Настройки</div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Интерфейс</div>
+      <div class="settings-items">
+        <div class="settings-item" onclick="toggleSetting('haptic')">
+          <div class="settings-item-left">
+            <i class="fa-solid fa-hand-point-up"></i>
+            <span class="settings-item-label">Виброотклик</span>
+          </div>
+          <div class="toggle on" id="toggleHaptic"></div>
+        </div>
+        <div class="settings-item" onclick="toggleSetting('animations')">
+          <div class="settings-item-left">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span class="settings-item-label">Анимации</span>
+          </div>
+          <div class="toggle on" id="toggleAnimations"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">Данные</div>
+      <div class="settings-items">
+        <div class="settings-item" onclick="exportData()">
+          <div class="settings-item-left">
+            <i class="fa-solid fa-download"></i>
+            <span class="settings-item-label">Экспорт</span>
+          </div>
+          <span class="settings-item-value">JSON</span>
+        </div>
+        <div class="settings-item" onclick="clearAllData()">
+          <div class="settings-item-left">
+            <i class="fa-solid fa-trash" style="color:var(--danger);"></i>
+            <span class="settings-item-label" style="color:var(--danger);">Удалить всё</span>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="color:var(--fg-secondary); font-size:12px;"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-label">О приложении</div>
+      <div class="settings-items">
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <i class="fa-solid fa-code"></i>
+            <span class="settings-item-label">Версия</span>
+          </div>
+          <span class="settings-item-value">1.0.0</span>
+        </div>
+        <div class="settings-item" id="tgVersionRow">
+          <div class="settings-item-left">
+            <i class="fa-brands fa-telegram"></i>
+            <span class="settings-item-label">Telegram</span>
+          </div>
+          <span class="settings-item-value" id="tgVersion">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== МОДАЛКА ЗАМЕТКИ ========== -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="noteModalTitle">Новая заметка</div>
+    <textarea class="modal-textarea" id="noteTextarea" placeholder="Введите текст заметки..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-secondary" onclick="closeNoteModal()">Отмена</button>
+      <button class="modal-btn modal-btn-danger" id="noteDeleteBtn" onclick="deleteNote()" style="display:none;">Удалить</button>
+      <button class="modal-btn modal-btn-primary" onclick="saveNote()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* =========================================================
+     Telegram Web App — интеграция
+     ========================================================= */
+  const tg = window.Telegram && window.Telegram.WebApp;
+  let isDemoMode = false;
+
+  // Настройки по умолчанию
+  const defaultSettings = { haptic: true, animations: true };
+  let settings = { ...defaultSettings };
+
+  // Данные
+  let tasks = [];
+  let notes = [];
+  let selectedPriority = 'medium';
+  let editingNoteId = null;
+
+  /* --- Инициализация --- */
+  function init() {
+    if (tg) {
+      tg.ready();
+      tg.expand();
+
+      // Показываем версию Telegram
+      const verEl = document.getElementById('tgVersion');
+      if (verEl) verEl.textContent = tg.version || '—';
+
+      // Применяем тему из Telegram
+      applyTelegramTheme();
+
+      // Получаем данные пользователя
+      const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (user) {
+        const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+        document.getElementById('profileName').textContent = name || 'Пользователь';
+        const initials = (user.first_name || '?')[0].toUpperCase() + (user.last_name ? user.last_name[0].toUpperCase() : '');
+        document.getElementById('profileAvatar').textContent = initials || '?';
+        document.getElementById('profileId').textContent = `@${user.username || 'id' + user.id}`;
+      } else {
+        // Нет данных пользователя — демо
+        isDemoMode = true;
+        document.getElementById('demoBanner').classList.add('show');
+        document.getElementById('profileName').textContent = 'Демо-пользователь';
+        document.getElementById('profileAvatar').textContent = 'DP';
+        document.getElementById('profileId').textContent = 'Открыто вне бота';
+      }
+
+      // Подписка на смену темы
+      tg.onEvent('themeChanged', applyTelegramTheme);
+
+    } else {
+      // Telegram Web App API недоступен
+      isDemoMode = true;
+      document.getElementById('demoBanner').classList.add('show');
+      document.getElementById('profileName').textContent = 'Демо-пользователь';
+      document.getElementById('profileAvatar').textContent = 'DP';
+      document.getElementById('profileId').textContent = 'Открыто вне Telegram';
+    }
+
+    // Загружаем локальные данные
+    loadFromStorage();
+    renderAll();
+  }
+
+  /* --- Применение темы Telegram --- */
+  function applyTelegramTheme() {
+    if (!tg) return;
+    const tp = tg.themeParams || {};
+
+    // Устанавливаем CSS-переменные из темы
+    const mapping = {
+      'bg_color': '--bg',
+      'secondary_bg_color': '--bg-secondary',
+      'text_color': '--fg',
+      'hint_color': '--fg-secondary',
+      'button_color': '--accent',
+      'button_text_color': '--accent-text',
+      'card_bg': '--card',
+    };
+
+    const root = document.documentElement;
+    for (const [tgKey, cssVar] of Object.entries(mapping)) {
+      if (tp[tgKey]) {
+        root.style.setProperty(cssVar, tp[tgKey]);
+      }
+    }
+
+    // Цветовая схема
+    if (tg.colorScheme === 'light') {
+      root.setAttribute('data-theme', 'light');
+    } else {
+      root.removeAttribute('data-theme');
+    }
+
+    // Header color
+    if (tp.header_bg_color) {
+      tg.setHeaderColor(tp.header_bg_color);
+    }
+  }
+
+  /* =========================================================
+     Навигация между экранами
+     ========================================================= */
+  let currentScreen = 'home';
+
+  function navigateTo(screen) {
+    haptic('light');
+
+    // Убираем активный экран
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    // Показываем нужный
+    const target = document.getElementById('screen' + screen.charAt(0).toUpperCase() + screen.slice(1));
+    if (target) target.classList.add('active');
+    currentScreen = screen;
+
+    // BackButton в Telegram
+    if (tg) {
+      if (screen !== 'home') {
+        tg.BackButton.show();
+      } else {
+        tg.BackButton.hide();
+      }
+    }
+
+    // MainButton
+    if (tg) {
+      if (screen === 'tasks') {
+        tg.MainButton.setParams({
+          text: 'Сохранить задачи',
+          color: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e94560',
+        });
+        tg.MainButton.show();
+        tg.MainButton.onClick(() => {
+          haptic('success');
+          tg.sendData(JSON.stringify({ type: 'tasks', tasks: tasks }));
+          showToast('Задачи отправлены в бот');
+        });
+      } else {
+        tg.MainButton.hide();
+      }
+    }
+
+    // Перерисовка содержимого экрана
+    if (screen === 'tasks') renderTasks();
+    if (screen === 'notes') renderNotes();
+    if (screen === 'settings') renderSettings();
+
+    // Скролл наверх
+    window.scrollTo(0, 0);
+  }
+
+  // Обработчик BackButton
+  if (tg) {
+    tg.onEvent('backButtonClicked', () => {
+      if (currentScreen !== 'home') navigateTo('home');
+    });
+  }
+
+  /* =========================================================
+     Задачи
+     ========================================================= */
+  function selectPriority(el) {
+    haptic('selection');
+    document.querySelectorAll('.priority-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    selectedPriority = el.dataset.p;
+  }
+
+  function addTask() {
+    const input = document.getElementById('taskInput');
+    const text = input.value.trim();
+    if (!text) {
+      haptic('error');
+      input.focus();
+      return;
+    }
+    tasks.unshift({
+      id: Date.now(),
+      text: text,
+      priority: selectedPriority,
+      done: false,
+      createdAt: new Date().toISOString(),
+    });
+    input.value = '';
+    haptic('success');
+    saveToStorage();
+    renderTasks();
+    updateStats();
+  }
+
+  function toggleTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      task.done = !task.done;
+      haptic(task.done ? 'success' : 'warning');
+      saveToStorage();
+      renderTasks();
+      updateStats();
+    }
+  }
+
+  function deleteTask(id) {
+    haptic('error');
+    tasks = tasks.filter(t => t.id !== id);
+    saveToStorage();
+    renderTasks();
+    updateStats();
+  }
+
+  function clearDoneTasks() {
+    const count = tasks.filter(t => t.done).length;
+    if (count === 0) {
+      showToast('Нет выполненных задач');
+      return;
+    }
+    haptic('success');
+    tasks = tasks.filter(t => !t.done);
+    saveToStorage();
+    renderTasks();
+    updateStats();
+    showToast(`Удалено: ${count}`);
+  }
+
+  function renderTasks() {
+    const list = document.getElementById('tasksList');
+    const countEl = document.getElementById('tasksCount');
+
+    if (tasks.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <i class="fa-regular fa-circle-check"></i>
+          <p>Пока нет задач. Добавьте первую!</p>
+        </div>`;
+      countEl.textContent = '0 задач';
+      return;
+    }
+
+    const active = tasks.filter(t => !t.done).length;
+    countEl.textContent = `${active} активных / ${tasks.length} всего`;
+
+    const priorityColors = { high: 'var(--danger)', medium: 'var(--warning)', low: 'var(--success)' };
+
+    list.innerHTML = tasks.map(t => `
+      <div class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}">
+        <div class="task-check" onclick="toggleTask(${t.id})">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <span class="task-text">${escapeHTML(t.text)}</span>
+        <div class="task-priority" style="background:${priorityColors[t.priority] || priorityColors.medium}"></div>
+        <button class="task-delete" onclick="event.stopPropagation();deleteTask(${t.id})" aria-label="Удалить">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  /* =========================================================
+     Заметки
+     ========================================================= */
+  function renderNotes() {
+    const grid = document.getElementById('notesGrid');
+    let html = notes.map(n => `
+      <div class="note-card" onclick="openNoteModal(${n.id})">
+        <div class="note-card-text">${escapeHTML(n.text.length > 100 ? n.text.slice(0, 100) + '...' : n.text)}</div>
+        <div class="note-card-date">${formatDate(n.createdAt)}</div>
+      </div>
+    `).join('');
+
+    // Кнопка добавления
+    html += `<div class="note-card note-card-add" onclick="openNoteModal(null)">
+      <i class="fa-solid fa-plus"></i>
+    </div>`;
+
+    grid.innerHTML = html;
+    updateStats();
+  }
+
+  function openNoteModal(id) {
+    haptic('light');
+    editingNoteId = id;
+    const modal = document.getElementById('noteModal');
+    const textarea = document.getElementById('noteTextarea');
+    const title = document.getElementById('noteModalTitle');
+    const delBtn = document.getElementById('noteDeleteBtn');
+
+    if (id === null) {
+      title.textContent = 'Новая заметка';
+      textarea.value = '';
+      delBtn.style.display = 'none';
+    } else {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      title.textContent = 'Редактирование';
+      textarea.value = note.text;
+      delBtn.style.display = 'block';
+    }
+
+    modal.classList.add('active');
+    setTimeout(() => textarea.focus(), 350);
+  }
+
+  function closeNoteModal() {
+    haptic('light');
+    document.getElementById('noteModal').classList.remove('active');
+    editingNoteId = null;
+  }
+
+  function saveNote() {
+    const text = document.getElementById('noteTextarea').value.trim();
+    if (!text) {
+      haptic('error');
+      return;
+    }
+    haptic('success');
+
+    if (editingNoteId === null) {
+      notes.unshift({
+        id: Date.now(),
+        text: text,
+        createdAt: new Date().toISOString(),
+      });
+    } else {
+      const note = notes.find(n => n.id === editingNoteId);
+      if (note) note.text = text;
+    }
+
+    saveToStorage();
+    closeNoteModal();
+    renderNotes();
+    updateStats();
+  }
+
+  function deleteNote() {
+    if (editingNoteId === null) return;
+    haptic('error');
+    notes = notes.filter(n => n.id !== editingNoteId);
+    saveToStorage();
+    closeNoteModal();
+    renderNotes();
+    updateStats();
+    showToast('Заметка удалена');
+  }
+
+  /* =========================================================
+     Настройки
+     ========================================================= */
+  function renderSettings() {
+    document.getElementById('toggleHaptic').classList.toggle('on', settings.haptic);
+    document.getElementById('toggleAnimations').classList.toggle('on', settings.animations);
+  }
+
+  function toggleSetting(key) {
+    settings[key] = !settings[key];
+    haptic('selection');
+    saveToStorage();
+    renderSettings();
+
+    if (key === 'animations' && !settings.animations) {
+      document.documentElement.style.setProperty('--anim-dur', '0s');
+    } else {
+      document.documentElement.style.removeProperty('--anim-dur');
+    }
+  }
+
+  /* =========================================================
+     Отправка данных в бот
+     ========================================================= */
+  function sendDataToBot() {
+    const payload = {
+      type: 'export',
+      user: tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? {
+        id: tg.initDataUnsafe.user.id,
+        name: [tg.initDataUnsafe.user.first_name, tg.initDataUnsafe.user.last_name].filter(Boolean).join(' '),
+      } : null,
+      tasks: tasks,
+      notes: notes,
+      exportedAt: new Date().toISOString(),
+    };
+
+    if (tg) {
+      haptic('success');
+      tg.sendData(JSON.stringify(payload));
+      showToast('Данные отправлены в бот');
+    } else {
+      // Демо — скачиваем JSON
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mini-app-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Файл скачан (демо)');
+    }
+  }
+
+  function exportData() {
+    const data = { tasks, notes, settings, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mini-app-data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    haptic('success');
+    showToast('Данные экспортированы');
+  }
+
+  function clearAllData() {
+    tasks = [];
+    notes = [];
+    settings = { ...defaultSettings };
+    saveToStorage();
+    renderAll();
+    haptic('error');
+    showToast('Все данные удалены');
+  }
+
+  /* =========================================================
+     Хранилище (localStorage с привязкой к user_id)
+     ========================================================= */
+  function getStorageKey() {
+    if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+      return 'miniapp_' + tg.initDataUnsafe.user.id;
+    }
+    return 'miniapp_demo';
+  }
+
+  function loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(getStorageKey());
+      if (raw) {
+        const data = JSON.parse(raw);
+        tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        notes = Array.isArray(data.notes) ? data.notes : [];
+        if (data.settings) settings = { ...defaultSettings, ...data.settings };
+      }
+    } catch (e) {
+      console.warn('Ошибка загрузки данных:', e);
+    }
+  }
+
+  function saveToStorage() {
+    try {
+      localStorage.setItem(getStorageKey(), JSON.stringify({ tasks, notes, settings }));
+    } catch (e) {
+      console.warn('Ошибка сохранения данных:', e);
+    }
+  }
+
+  /* =========================================================
+     Утилиты
+     ========================================================= */
+  function haptic(type) {
+    if (!settings.haptic) return;
+    if (tg && tg.HapticFeedback) {
+      const map = {
+        light: 'impactLight',
+        medium: 'impactMedium',
+        heavy: 'impactHeavy',
+        success: 'notificationSuccess',
+        warning: 'notificationWarning',
+        error: 'notificationError',
+        selection: 'selectionChange',
+      };
+      const method = map[type] || 'impactLight';
+      if (tg.HapticFeedback[method]) tg.HapticFeedback[method]();
+    }
+  }
+
+  function showToast(msg) {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 2600);
+  }
+
+  function updateStats() {
+    document.getElementById('statTasks').textContent = tasks.filter(t => !t.done).length;
+    document.getElementById('statDone').textContent = tasks.filter(t => t.done).length;
+    document.getElementById('statNotes').textContent = notes.length;
+  }
+
+  function formatDate(iso) {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ', ' +
+             d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '—';
+    }
+  }
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderAll() {
+    renderTasks();
+    renderNotes();
+    renderSettings();
+    updateStats();
+  }
+
+  /* --- Закрытие модалки по клику на оверлей --- */
+  document.getElementById('noteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeNoteModal();
+  });
+
+  /* --- Запуск --- */
+  init();
+</script>
 </body>
 </html>
